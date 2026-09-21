@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ventas - Salón de Belleza</title>
+    <title>Ventas de Servicios - Salón de Belleza</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
@@ -11,7 +11,7 @@
     </style>
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans antialiased"
-      x-data="saleForm()">
+      x-data="serviceSaleForm()">
 
     <div class="min-h-screen flex flex-col">
 
@@ -42,11 +42,16 @@
                 </div>
             @endif
 
-            <!-- Encabezado, buscador y botón -->
-            <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-                <h1 class="text-2xl font-bold text-gray-900 w-full">Listado de Ventas</h1>
+            @if($employees->isEmpty())
+                <div class="mb-6 bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-r-lg shadow-sm">
+                    <p class="text-sm text-yellow-700 font-medium">No hay empleados activos registrados. Agrega al menos uno directamente en la base de datos antes de registrar una venta.</p>
+                </div>
+            @endif
 
-                <form method="GET" action="{{ route('sales.products.index') }}" class="w-full sm:w-85">
+            <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+                <h1 class="text-2xl font-bold text-gray-900 w-full">Ventas de Servicios</h1>
+
+                <form method="GET" action="{{ route('service-sales.index') }}" class="w-full sm:w-85">
                     <input type="text" name="search" value="{{ $search ?? '' }}" placeholder="Buscar por cliente o # de venta..."
                            class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-pink-500 shadow-sm">
                 </form>
@@ -57,7 +62,7 @@
                 </button>
             </div>
 
-            <!-- Tabla de Ventas -->
+            <!-- Tabla de Ventas de Servicios -->
             <div class="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
@@ -66,42 +71,34 @@
                                 <th class="py-3 px-4 font-semibold">#</th>
                                 <th class="py-3 px-4 font-semibold">Fecha</th>
                                 <th class="py-3 px-4 font-semibold">Cliente</th>
-                                <th class="py-3 px-4 font-semibold text-center">Productos</th>
+                                <th class="py-3 px-4 font-semibold text-center">Servicios</th>
                                 <th class="py-3 px-4 font-semibold">Pago</th>
-                                <th class="py-3 px-4 font-semibold text-right">Descuento</th>
                                 <th class="py-3 px-4 font-semibold text-right">Total</th>
                                 <th class="py-3 px-4 font-semibold text-center">Estado</th>
                                 <th class="py-3 px-4 font-semibold text-right">Acciones</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-200 text-sm">
-                            @forelse ($sales as $sale)
+                            @forelse ($serviceSales as $venta)
                                 <tr class="hover:bg-gray-50/50 transition">
-                                    <td class="py-3 px-4 text-gray-500 font-mono text-xs">#{{ $sale->id }}</td>
-                                    <td class="py-3 px-4 text-gray-600">{{ $sale->created_at->format('d/m/Y H:i') }}</td>
-                                    <td class="py-3 px-4 text-gray-900 font-medium">{{ $sale->cliente_nombre ?? 'Cliente general' }}</td>
-                                    <td class="py-3 px-4 text-center text-gray-600">{{ $sale->details_count }}</td>
-                                    <td class="py-3 px-4 text-gray-600 capitalize">{{ $sale->metodo_pago }}</td>
-                                    <td class="py-3 px-4 text-right text-pink-600 font-semibold">
-                                        @if($sale->descuento > 0)
-                                            -${{ number_format($sale->descuento, 2) }}
-                                        @else
-                                            <span class="text-gray-300">—</span>
-                                        @endif
-                                    </td>
-                                    <td class="py-3 px-4 text-emerald-600">${{ number_format($sale->total, 2) }}</td>
+                                    <td class="py-3 px-4 text-gray-500 font-mono text-xs">#{{ $venta->id }}</td>
+                                    <td class="py-3 px-4 text-gray-600">{{ $venta->created_at->format('d/m/Y H:i') }}</td>
+                                    <td class="py-3 px-4 text-gray-900 font-medium">{{ $venta->cliente_nombre ?? 'Cliente general' }}</td>
+                                    <td class="py-3 px-4 text-center text-gray-600">{{ $venta->details_count }}</td>
+                                    <td class="py-3 px-4 text-gray-600 capitalize">{{ $venta->metodo_pago }}</td>
+                                    <td class="py-3 px-4 text-right text-pink-600 font-semibold">${{ number_format($venta->total, 2) }}</td>
                                     <td class="py-3 px-4 text-center">
-                                        <span class="px-2.5 py-1 rounded-full text-xs font-bold {{ $sale->estado === 'completada' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700' }}">
-                                            {{ ucfirst($sale->estado) }}
+                                        <span class="px-2.5 py-1 rounded-full text-xs font-bold {{ $venta->estado === 'completada' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700' }}">
+                                            {{ ucfirst($venta->estado) }}
                                         </span>
                                     </td>
                                     <td class="py-3 px-4 text-right space-x-2">
-                                        <button @click="viewSale({{ Illuminate\Support\Js::from($sale->load('details.product')) }})"
+                                        <button @click="viewSale({{ Illuminate\Support\Js::from($venta) }})"
                                                 class="text-indigo-600 hover:text-indigo-900 font-medium text-xs bg-indigo-50 px-2.5 py-1 rounded-md transition">
                                             Ver
                                         </button>
-                                        @if($sale->estado === 'completada')
-                                            <form action="{{ route('sales.destroy', $sale->id) }}" method="POST" class="inline-block" onsubmit="return confirm('¿Cancelar esta venta? Se restaurará el stock de los productos.');">
+                                        @if($venta->estado === 'completada')
+                                            <form action="{{ route('service-sales.destroy', $venta->id) }}" method="POST" class="inline-block" onsubmit="return confirm('¿Cancelar esta venta de servicios?');">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="text-red-600 hover:text-red-900 font-medium text-xs bg-red-50 px-2.5 py-1 rounded-md transition">
@@ -113,14 +110,14 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="8" class="text-center py-8 text-gray-400">No hay ventas registradas todavía.</td>
+                                    <td colspan="8" class="text-center py-8 text-gray-400">No hay ventas de servicios registradas todavía.</td>
                                 </tr>
                             @endforelse
                         </tbody>
                     </table>
                 </div>
                 <div class="p-4 border-t border-gray-200">
-                    {{ $sales->links() }}
+                    {{ $serviceSales->links() }}
                 </div>
             </div>
         </main>
@@ -128,10 +125,10 @@
 
     <!-- MODAL NUEVA VENTA -->
     <div x-show="openCreateModal" class="fixed inset-0 z-50 overflow-y-auto bg-black/50 flex items-center justify-center p-4" x-cloak>
-        <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-xl relative" @click.away="openCreateModal = false">
-            <h3 class="text-lg font-bold text-gray-900 mb-4">Nueva Venta</h3>
+        <div class="bg-white rounded-2xl max-w-3xl w-full p-6 shadow-xl relative" @click.away="openCreateModal = false">
+            <h3 class="text-lg font-bold text-gray-900 mb-4">Nueva Venta de Servicios</h3>
 
-            <form :action="'{{ route('sales.store') }}'" method="POST">
+            <form action="{{ route('service-sales.store') }}" method="POST">
                 @csrf
 
                 <div class="grid grid-cols-2 gap-4 mb-4">
@@ -149,14 +146,16 @@
                     </div>
                 </div>
 
-                <!-- Líneas de producto dinámicas -->
+                <!-- Líneas de servicio dinámicas -->
                 <div class="border border-gray-200 rounded-lg mb-4">
                     <table class="w-full text-sm">
                         <thead>
-                            <tr class="bg-gray-50 text-gray-500 text-xs uppercase rounded-t-lg">
-                                <th class="text-left py-2 px-3 rounded-tl-lg">Producto</th>
-                                <th class="text-center py-2 px-3 w-20">Cant.</th>
-                                <th class="text-center py-2 px-3 w-24">Desc. ($)</th>
+                            <tr class="bg-gray-50 text-gray-500 text-xs uppercase">
+                                <th class="text-left py-2 px-3 rounded-tl-lg">Servicio</th>
+                                <th class="text-left py-2 px-3 w-36">Atendió</th>a
+                                <th class="text-center py-2 px-3 w-16">Cant.</th>
+                                <th class="text-center py-2 px-3 w-20">Desc. ($)</th>
+                                <th class="text-center py-2 px-3 w-20">Com. (%)</th>
                                 <th class="text-right py-2 px-3 w-24">Subtotal</th>
                                 <th class="w-10 rounded-tr-lg"></th>
                             </tr>
@@ -165,38 +164,45 @@
                             <template x-for="(item, index) in items" :key="index">
                                 <tr class="border-t border-gray-100">
                                     <td class="py-2 px-3 relative" @click.away="item.open = false">
-                                        <input type="hidden" :name="`productos[${index}][product_id]`" :value="item.product_id">
+                                        <input type="hidden" :name="`servicios[${index}][service_id]`" :value="item.service_id">
                                         <input type="text"
                                                x-model="item.search"
                                                @focus="item.open = true"
-                                               @input="item.product_id = ''; item.open = true"
-                                               placeholder="Buscar por nombre, marca o tamaño (ej. 250 ml)..."
+                                               @input="item.service_id = ''; item.open = true"
+                                               placeholder="Buscar servicio..."
                                                autocomplete="off"
                                                class="w-full border border-gray-300 rounded-lg p-1.5 text-sm focus:ring-pink-500 focus:border-pink-500">
 
-                                        <div x-show="item.open && filteredProducts(item).length > 0" x-cloak
-                                             class="absolute z-20 mt-1 w-full max-h-56 overflow-y-auto bg-white border border-gray-300 rounded-lg shadow-2xl">
-                                            <template x-for="p in filteredProducts(item)" :key="p.id">
+                                        <div x-show="item.open && filteredServices(item).length > 0" x-cloak
+                                             class="absolute z-20 mt-1 w-64 max-h-56 overflow-y-auto bg-white border border-gray-300 rounded-lg shadow-2xl">
+                                            <template x-for="s in filteredServices(item)" :key="s.id">
                                                 <button type="button"
-                                                        @click="selectProduct(item, p)"
+                                                        @click="selectService(item, s)"
                                                         class="w-full text-left px-3 py-2.5 text-sm hover:bg-pink-50 border-b border-gray-100 last:border-b-0">
-                                                    <span class="font-medium text-gray-800" x-text="productLabel(p)"></span>
+                                                    <span class="font-medium text-gray-800" x-text="s.nombre"></span>
                                                     <span class="block text-xs text-gray-400">
-                                                        <span x-show="p.marca" x-text="p.marca + ' — '"></span>$<span x-text="parseFloat(p.precio_venta).toFixed(2)"></span> — stock: <span x-text="p.existencia"></span>
+                                                        $<span x-text="parseFloat(s.precio).toFixed(2)"></span>
                                                     </span>
                                                 </button>
                                             </template>
                                         </div>
-
-                                        <p x-show="item.open && item.search && filteredProducts(item).length === 0" x-cloak class="absolute z-20 mt-1 w-full bg-white border border-gray-300 rounded-lg shadow-2xl px-3 py-2 text-xs text-gray-400">
-                                            No se encontraron productos.
-                                        </p>
                                     </td>
                                     <td class="py-2 px-3">
-                                        <input type="number" :name="`productos[${index}][cantidad]`" x-model.number="item.cantidad" min="1" required class="w-full border border-gray-300 rounded-lg p-1.5 text-sm text-center">
+                                        <select :name="`servicios[${index}][employee_id]`" x-model.number="item.employee_id" required class="w-full border border-gray-300 rounded-lg p-1.5 text-sm">
+                                            <option value="" disabled>Empleado</option>
+                                            <template x-for="e in employees" :key="e.id">
+                                                <option :value="e.id" x-text="e.nombre"></option>
+                                            </template>
+                                        </select>
                                     </td>
                                     <td class="py-2 px-3">
-                                        <input type="number" step="0.01" min="0" :name="`productos[${index}][descuento]`" x-model.number="item.descuento" placeholder="0.00" class="w-full border border-gray-300 rounded-lg p-1.5 text-sm text-center">
+                                        <input type="number" :name="`servicios[${index}][cantidad]`" x-model.number="item.cantidad" min="1" required class="w-full border border-gray-300 rounded-lg p-1.5 text-sm text-center">
+                                    </td>
+                                    <td class="py-2 px-3">
+                                        <input type="number" step="0.01" min="0" :name="`servicios[${index}][descuento]`" x-model.number="item.descuento" placeholder="0.00" class="w-full border border-gray-300 rounded-lg p-1.5 text-sm text-center">
+                                    </td>
+                                    <td class="py-2 px-3">
+                                        <input type="number" step="0.01" min="0" max="100" :name="`servicios[${index}][comision_porcentaje]`" x-model.number="item.comision_porcentaje" required placeholder="0" class="w-full border border-gray-300 rounded-lg p-1.5 text-sm text-center">
                                     </td>
                                     <td class="py-2 px-3 text-right text-gray-600" x-text="'$' + lineTotal(item).toFixed(2)"></td>
                                     <td class="py-2 px-3 text-center">
@@ -207,7 +213,7 @@
                         </tbody>
                     </table>
                     <button type="button" @click="addItem()" class="w-full text-xs text-pink-600 hover:bg-pink-50 py-2 font-medium border-t border-gray-100 rounded-b-lg">
-                        + Agregar producto
+                        + Agregar servicio
                     </button>
                 </div>
 
@@ -215,7 +221,8 @@
                     <div class="text-right space-y-0.5">
                         <p class="text-xs text-gray-500">Subtotal: <span x-text="'$' + subtotal().toFixed(2)"></span></p>
                         <p class="text-xs text-gray-500" x-show="totalDescuento() > 0">Descuento total: <span class="text-red-500" x-text="'-$' + totalDescuento().toFixed(2)"></span></p>
-                        <span class="text-lg font-bold text-pink-600">Total: <span x-text="'$' + total().toFixed(2)"></span></span>
+                        <p class="text-xs text-gray-500">Comisiones totales: <span class="text-indigo-500" x-text="'$' + totalComision().toFixed(2)"></span></p>
+                        <span class="text-lg font-bold text-pink-600">Total a cobrar: <span x-text="'$' + total().toFixed(2)"></span></span>
                     </div>
                 </div>
 
@@ -227,29 +234,33 @@
         </div>
     </div>
 
-    <!-- MODAL VER DETALLE DE VENTA -->
+    <!-- MODAL VER DETALLE -->
     <div x-show="openViewModal" class="fixed inset-0 z-50 overflow-y-auto bg-black/50 flex items-center justify-center p-4" x-cloak>
-        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl relative" @click.away="openViewModal = false">
-            <h3 class="text-lg font-bold text-gray-900 mb-1">Venta <span x-text="'#' + selectedSale.id"></span></h3>
+        <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-xl relative" @click.away="openViewModal = false">
+            <h3 class="text-lg font-bold text-gray-900 mb-1">Venta de Servicios <span x-text="'#' + selectedSale.id"></span></h3>
             <p class="text-xs text-gray-400 mb-4" x-text="selectedSale.cliente_nombre || 'Cliente general'"></p>
 
             <div class="border border-gray-200 rounded-lg overflow-hidden mb-4">
                 <table class="w-full text-sm">
                     <thead>
                         <tr class="bg-gray-50 text-gray-500 text-xs uppercase">
-                            <th class="text-left py-2 px-3">Producto</th>
+                            <th class="text-left py-2 px-3">Servicio</th>
+                            <th class="text-left py-2 px-3">Atendió</th>
                             <th class="text-center py-2 px-3">Cant.</th>
                             <th class="text-right py-2 px-3">Desc.</th>
                             <th class="text-right py-2 px-3">Subtotal</th>
+                            <th class="text-right py-2 px-3">Comisión</th>
                         </tr>
                     </thead>
                     <tbody>
                         <template x-for="detail in (selectedSale.details || [])" :key="detail.id">
                             <tr class="border-t border-gray-100">
-                                <td class="py-2 px-3" x-text="detail.product ? productLabel(detail.product) : 'Producto eliminado'"></td>
+                                <td class="py-2 px-3" x-text="detail.service ? detail.service.nombre : 'Servicio eliminado'"></td>
+                                <td class="py-2 px-3" x-text="detail.employee ? detail.employee.nombre : '—'"></td>
                                 <td class="py-2 px-3 text-center" x-text="detail.cantidad"></td>
                                 <td class="py-2 px-3 text-right" x-text="detail.descuento > 0 ? '-$' + parseFloat(detail.descuento).toFixed(2) : '—'"></td>
                                 <td class="py-2 px-3 text-right" x-text="'$' + parseFloat(detail.subtotal).toFixed(2)"></td>
+                                <td class="py-2 px-3 text-right text-indigo-600" x-text="'$' + parseFloat(detail.comision_monto).toFixed(2) + ' (' + parseFloat(detail.comision_porcentaje) + '%)'"></td>
                             </tr>
                         </template>
                     </tbody>
@@ -269,74 +280,67 @@
     </div>
 
     <script>
-        function saleForm() {
+        function serviceSaleForm() {
             return {
                 openCreateModal: false,
                 openViewModal: false,
                 selectedSale: {},
-                products: @json($products),
-                items: [{ product_id: '', cantidad: 1, descuento: 0, search: '', open: false }],
+                services: @json($services),
+                employees: @json($employees),
+                items: [{ service_id: '', employee_id: '', cantidad: 1, descuento: 0, comision_porcentaje: 0, search: '', open: false }],
                 cliente_nombre: '',
                 metodo_pago: 'efectivo',
 
                 openModal() {
-                    this.items = [{ product_id: '', cantidad: 1, descuento: 0, search: '', open: false }];
+                    this.items = [{ service_id: '', employee_id: '', cantidad: 1, descuento: 0, comision_porcentaje: 0, search: '', open: false }];
                     this.cliente_nombre = '';
                     this.metodo_pago = 'efectivo';
                     this.openCreateModal = true;
                 },
 
                 addItem() {
-                    this.items.push({ product_id: '', cantidad: 1, descuento: 0, search: '', open: false });
+                    this.items.push({ service_id: '', employee_id: '', cantidad: 1, descuento: 0, comision_porcentaje: 0, search: '', open: false });
                 },
 
                 removeItem(index) {
                     this.items.splice(index, 1);
                 },
 
-                filteredProducts(item) {
-                    if (!item.search) return this.products;
+                filteredServices(item) {
+                    if (!item.search) return this.services;
                     const term = item.search.toLowerCase();
-                    return this.products.filter(p => {
-                        const presentacion = `${p.presentacion_valor ?? ''} ${p.presentacion_unidad ?? ''}`.toLowerCase();
-                        return p.producto.toLowerCase().includes(term)
-                            || (p.marca && p.marca.toLowerCase().includes(term))
-                            || presentacion.includes(term);
-                    });
+                    return this.services.filter(s => s.nombre.toLowerCase().includes(term));
                 },
 
-                productLabel(p) {
-                    let label = p.producto;
-                    if (p.presentacion_valor) {
-                        const valor = parseFloat(p.presentacion_valor);
-                        label += ` — ${valor % 1 === 0 ? valor.toFixed(0) : valor} ${p.presentacion_unidad ?? ''}`;
-                    }
-                    return label;
-                },
-
-                selectProduct(item, product) {
-                    item.product_id = product.id;
-                    item.search = this.productLabel(product);
+                selectService(item, service) {
+                    item.service_id = service.id;
+                    item.search = service.nombre;
                     item.open = false;
                 },
 
                 lineTotal(item) {
-                    const product = this.products.find(p => p.id === item.product_id);
-                    if (!product || !item.cantidad) return 0;
-                    const bruto = parseFloat(product.precio_venta) * item.cantidad;
+                    const service = this.services.find(s => s.id === item.service_id);
+                    if (!service || !item.cantidad) return 0;
+                    const bruto = parseFloat(service.precio) * item.cantidad;
                     return Math.max(bruto - (parseFloat(item.descuento) || 0), 0);
                 },
 
                 subtotal() {
                     return this.items.reduce((sum, item) => {
-                        const product = this.products.find(p => p.id === item.product_id);
-                        if (!product || !item.cantidad) return sum;
-                        return sum + (parseFloat(product.precio_venta) * item.cantidad);
+                        const service = this.services.find(s => s.id === item.service_id);
+                        if (!service || !item.cantidad) return sum;
+                        return sum + (parseFloat(service.precio) * item.cantidad);
                     }, 0);
                 },
 
                 totalDescuento() {
                     return this.items.reduce((sum, item) => sum + (parseFloat(item.descuento) || 0), 0);
+                },
+
+                totalComision() {
+                    return this.items.reduce((sum, item) => {
+                        return sum + (this.lineTotal(item) * ((parseFloat(item.comision_porcentaje) || 0) / 100));
+                    }, 0);
                 },
 
                 total() {

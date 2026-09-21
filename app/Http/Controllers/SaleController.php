@@ -12,7 +12,26 @@ class SaleController extends Controller
     /**
      * Listado de ventas con búsqueda y paginación.
      */
-    public function index(Request $request)
+    // public function index(Request $request)
+    // {
+    //     $search = $request->input('search');
+
+    //     $sales = Sale::with(['user', 'details.product'])
+    //                 ->withCount('details')
+    //                 ->when($search, function ($query, $search) {
+    //                     return $query->where('cliente_nombre', 'like', "%{$search}%")
+    //                                  ->orWhere('id', $search);
+    //                 })
+    //                 ->latest()
+    //                 ->paginate(10)
+    //                 ->withQueryString();
+
+       
+    //     $products = Product::with('category')->orderBy('producto')->get();
+
+    //     return view('sales.index', compact('sales', 'search', 'products'));
+    // }
+    public function productsIndex(Request $request)
     {
         $search = $request->input('search');
 
@@ -26,10 +45,9 @@ class SaleController extends Controller
                     ->paginate(10)
                     ->withQueryString();
 
-        // Se envían todos los productos (con su precio y existencia actual)
-        // para armar el formulario de nueva venta en el frontend.
         $products = Product::with('category')->orderBy('producto')->get();
 
+        // Puedes cambiar 'sales.index' por la vista específica de productos si la creas luego (ej: 'sales.products.index')
         return view('sales.index', compact('sales', 'search', 'products'));
     }
 
@@ -112,11 +130,11 @@ class SaleController extends Controller
                 return $sale;
             });
         } catch (\Exception $e) {
-            return redirect()->route('sales.index')->with('error', $e->getMessage());
+            return redirect()->route('sales.products.index')->with('error', $e->getMessage());
         }
 
-        return redirect()->route('sales.index')
-                         ->with('success', 'Venta #' . $sale->id . ' registrada. Total: $' . number_format($sale->total, 2));
+        return redirect()->route('sales.products.index')
+                 ->with('success', 'Venta #' . $sale->id . ' registrada...');
     }
 
     /**
