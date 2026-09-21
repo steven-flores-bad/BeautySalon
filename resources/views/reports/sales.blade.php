@@ -158,9 +158,9 @@
                                         </td>
                                         <td class="py-3 px-4 text-right text-gray-600">${{ number_format($detalle->precio_unitario, 2) }}</td>
                                         <td class="py-3 px-4 text-right">
-                                            @if($detalle->venta_descuento > 0)
-                                                <span class="text-red-500 font-medium" title="Descuento aplicado a la venta #{{ $detalle->venta_id }} completa">
-                                                    -${{ number_format($detalle->venta_descuento, 2) }}
+                                            @if($detalle->descuento > 0)
+                                                <span class="text-red-500 font-medium">
+                                                    -${{ number_format($detalle->descuento, 2) }}
                                                 </span>
                                             @else
                                                 <span class="text-gray-300">—</span>

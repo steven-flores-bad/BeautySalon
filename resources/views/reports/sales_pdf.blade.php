@@ -117,8 +117,8 @@
                         <td class="center">{{ $detalle->cantidad }}</td>
                         <td class="num">${{ number_format($detalle->precio_unitario, 2) }}</td>
                         <td class="num">
-                            @if($detalle->venta_descuento > 0)
-                                <span style="color:#dc2626;">-${{ number_format($detalle->venta_descuento, 2) }}</span>
+                            @if($detalle->descuento > 0)
+                                <span style="color:#dc2626;">-${{ number_format($detalle->descuento, 2) }}</span>
                             @else
                                 —
                             @endif

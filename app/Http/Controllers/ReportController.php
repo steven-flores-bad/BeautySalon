@@ -86,17 +86,13 @@ class ReportController extends Controller
         $productosVendidos = SaleDetail::select(
                                 'sale_details.*',
                                 DB::raw('DATE(sales.created_at) as fecha_venta'),
-                                'sales.id as venta_id',
-                                'sales.descuento as venta_descuento'
+                                'sales.id as venta_id'
                             )
                             ->join('sales', 'sales.id', '=', 'sale_details.sale_id')
                             ->where('sales.estado', 'completada')
                             ->whereBetween('sales.created_at', [$inicio, $fin])
                             ->with('product')
                             ->get()
-                            // Se agrupa solo por fecha (para la fila separadora por
-                            // día); cada línea de venta se muestra individual, con
-                            // el descuento de SU propia venta, no sumado entre sí.
                             ->groupBy('fecha_venta')
                             ->map(function ($grupo) {
                                 return $grupo->sortByDesc('subtotal')->values();

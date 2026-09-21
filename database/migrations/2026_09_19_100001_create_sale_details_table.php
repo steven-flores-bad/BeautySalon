@@ -23,7 +23,8 @@ return new class extends Migration
             // Precio "congelado" al momento de la venta, independiente de que el
             // precio del producto cambie después. Clave para reportes históricos.
             $table->decimal('precio_unitario', 10, 2);
-            $table->decimal('subtotal', 10, 2); // cantidad * precio_unitario
+            $table->decimal('descuento', 10, 2)->default(0); // <-- Nuevo campo de descuento por producto
+            $table->decimal('subtotal', 10, 2); // (cantidad * precio_unitario) - descuento
 
             $table->timestamps();
         });

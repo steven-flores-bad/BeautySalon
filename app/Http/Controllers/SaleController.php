@@ -41,16 +41,17 @@ class SaleController extends Controller
         $validated = $request->validate([
             'cliente_nombre' => 'nullable|string|max:150',
             'metodo_pago' => 'required|in:efectivo,tarjeta,transferencia',
-            'descuento' => 'nullable|numeric|min:0',
             'notas' => 'nullable|string',
             'productos' => 'required|array|min:1',
             'productos.*.product_id' => 'required|exists:products,id',
             'productos.*.cantidad' => 'required|integer|min:1',
+            'productos.*.descuento' => 'nullable|numeric|min:0',
         ]);
 
         try {
             $sale = DB::transaction(function () use ($validated) {
                 $subtotal = 0;
+                $totalDescuento = 0;
                 $lineas = [];
 
                 foreach ($validated['productos'] as $item) {
@@ -63,26 +64,34 @@ class SaleController extends Controller
                     }
 
                     $precioUnitario = $product->precio_venta;
-                    $lineaSubtotal = $precioUnitario * $item['cantidad'];
-                    $subtotal += $lineaSubtotal;
+                    $descuentoLinea = $item['descuento'] ?? 0;
+                    $bruto = $precioUnitario * $item['cantidad'];
+
+                    if ($descuentoLinea > $bruto) {
+                        throw new \Exception("El descuento de \"{$product->producto}\" no puede ser mayor al subtotal de esa línea.");
+                    }
+
+                    $lineaSubtotal = $bruto - $descuentoLinea;
+                    $subtotal += $bruto;
+                    $totalDescuento += $descuentoLinea;
 
                     $lineas[] = [
                         'product' => $product,
                         'cantidad' => $item['cantidad'],
                         'precio_unitario' => $precioUnitario,
+                        'descuento' => $descuentoLinea,
                         'subtotal' => $lineaSubtotal,
                     ];
                 }
 
-                $descuento = $validated['descuento'] ?? 0;
-                $total = max($subtotal - $descuento, 0);
+                $total = $subtotal - $totalDescuento;
 
                 $sale = Sale::create([
                     'user_id' => auth()->id(),
                     'cliente_nombre' => $validated['cliente_nombre'] ?? null,
                     'metodo_pago' => $validated['metodo_pago'],
                     'subtotal' => $subtotal,
-                    'descuento' => $descuento,
+                    'descuento' => $totalDescuento,
                     'total' => $total,
                     'estado' => 'completada',
                     'notas' => $validated['notas'] ?? null,
@@ -93,6 +102,7 @@ class SaleController extends Controller
                         'product_id' => $linea['product']->id,
                         'cantidad' => $linea['cantidad'],
                         'precio_unitario' => $linea['precio_unitario'],
+                        'descuento' => $linea['descuento'],
                         'subtotal' => $linea['subtotal'],
                     ]);
 

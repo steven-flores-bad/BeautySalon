@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ventas / Caja - Salón de Belleza</title>
+    <title>Ventas - Salón de Belleza</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
@@ -44,9 +44,9 @@
 
             <!-- Encabezado, buscador y botón -->
             <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-                <h1 class="text-2xl font-bold text-gray-900 w-full">Ventas / Caja</h1>
+                <h1 class="text-2xl font-bold text-gray-900 w-full">Listado de Ventas</h1>
 
-                <form method="GET" action="{{ route('sales.index') }}" class="w-full sm:w-72">
+                <form method="GET" action="{{ route('sales.index') }}" class="w-full sm:w-85">
                     <input type="text" name="search" value="{{ $search ?? '' }}" placeholder="Buscar por cliente o # de venta..."
                            class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-pink-500 shadow-sm">
                 </form>
@@ -68,7 +68,8 @@
                                 <th class="py-3 px-4 font-semibold">Cliente</th>
                                 <th class="py-3 px-4 font-semibold text-center">Productos</th>
                                 <th class="py-3 px-4 font-semibold">Pago</th>
-                                <th class="py-3 px-4 font-semibold">Total</th>
+                                <th class="py-3 px-4 font-semibold text-right">Descuento</th>
+                                <th class="py-3 px-4 font-semibold text-right">Total</th>
                                 <th class="py-3 px-4 font-semibold text-center">Estado</th>
                                 <th class="py-3 px-4 font-semibold text-right">Acciones</th>
                             </tr>
@@ -81,7 +82,14 @@
                                     <td class="py-3 px-4 text-gray-900 font-medium">{{ $sale->cliente_nombre ?? 'Cliente general' }}</td>
                                     <td class="py-3 px-4 text-center text-gray-600">{{ $sale->details_count }}</td>
                                     <td class="py-3 px-4 text-gray-600 capitalize">{{ $sale->metodo_pago }}</td>
-                                    <td class="py-3 px-4 text-pink-600 font-semibold">${{ number_format($sale->total, 2) }}</td>
+                                    <td class="py-3 px-4 text-right text-pink-600 font-semibold">
+                                        @if($sale->descuento > 0)
+                                            -${{ number_format($sale->descuento, 2) }}
+                                        @else
+                                            <span class="text-gray-300">—</span>
+                                        @endif
+                                    </td>
+                                    <td class="py-3 px-4 text-emerald-600">${{ number_format($sale->total, 2) }}</td>
                                     <td class="py-3 px-4 text-center">
                                         <span class="px-2.5 py-1 rounded-full text-xs font-bold {{ $sale->estado === 'completada' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700' }}">
                                             {{ ucfirst($sale->estado) }}
@@ -148,6 +156,7 @@
                             <tr class="bg-gray-50 text-gray-500 text-xs uppercase rounded-t-lg">
                                 <th class="text-left py-2 px-3 rounded-tl-lg">Producto</th>
                                 <th class="text-center py-2 px-3 w-20">Cant.</th>
+                                <th class="text-center py-2 px-3 w-24">Desc. ($)</th>
                                 <th class="text-right py-2 px-3 w-24">Subtotal</th>
                                 <th class="w-10 rounded-tr-lg"></th>
                             </tr>
@@ -186,6 +195,9 @@
                                     <td class="py-2 px-3">
                                         <input type="number" :name="`productos[${index}][cantidad]`" x-model.number="item.cantidad" min="1" required class="w-full border border-gray-300 rounded-lg p-1.5 text-sm text-center">
                                     </td>
+                                    <td class="py-2 px-3">
+                                        <input type="number" step="0.01" min="0" :name="`productos[${index}][descuento]`" x-model.number="item.descuento" placeholder="0.00" class="w-full border border-gray-300 rounded-lg p-1.5 text-sm text-center">
+                                    </td>
                                     <td class="py-2 px-3 text-right text-gray-600" x-text="'$' + lineTotal(item).toFixed(2)"></td>
                                     <td class="py-2 px-3 text-center">
                                         <button type="button" @click="removeItem(index)" class="text-red-500 hover:text-red-700 text-xs" x-show="items.length > 1">✕</button>
@@ -199,13 +211,10 @@
                     </button>
                 </div>
 
-                <div class="grid grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label class="block text-xs font-medium text-gray-700 mb-1">Descuento ($)</label>
-                        <input type="number" step="0.01" min="0" name="descuento" x-model.number="descuento" value="0" class="w-full border border-gray-300 rounded-lg p-2 text-sm">
-                    </div>
-                    <div class="flex flex-col justify-end text-right">
-                        <span class="text-xs text-gray-500">Subtotal: <span x-text="'$' + subtotal().toFixed(2)"></span></span>
+                <div class="flex justify-end mb-4">
+                    <div class="text-right space-y-0.5">
+                        <p class="text-xs text-gray-500">Subtotal: <span x-text="'$' + subtotal().toFixed(2)"></span></p>
+                        <p class="text-xs text-gray-500" x-show="totalDescuento() > 0">Descuento total: <span class="text-red-500" x-text="'-$' + totalDescuento().toFixed(2)"></span></p>
                         <span class="text-lg font-bold text-pink-600">Total: <span x-text="'$' + total().toFixed(2)"></span></span>
                     </div>
                 </div>
@@ -230,6 +239,7 @@
                         <tr class="bg-gray-50 text-gray-500 text-xs uppercase">
                             <th class="text-left py-2 px-3">Producto</th>
                             <th class="text-center py-2 px-3">Cant.</th>
+                            <th class="text-right py-2 px-3">Desc.</th>
                             <th class="text-right py-2 px-3">Subtotal</th>
                         </tr>
                     </thead>
@@ -238,6 +248,7 @@
                             <tr class="border-t border-gray-100">
                                 <td class="py-2 px-3" x-text="detail.product ? productLabel(detail.product) : 'Producto eliminado'"></td>
                                 <td class="py-2 px-3 text-center" x-text="detail.cantidad"></td>
+                                <td class="py-2 px-3 text-right" x-text="detail.descuento > 0 ? '-$' + parseFloat(detail.descuento).toFixed(2) : '—'"></td>
                                 <td class="py-2 px-3 text-right" x-text="'$' + parseFloat(detail.subtotal).toFixed(2)"></td>
                             </tr>
                         </template>
@@ -264,21 +275,19 @@
                 openViewModal: false,
                 selectedSale: {},
                 products: @json($products),
-                items: [{ product_id: '', cantidad: 1, search: '', open: false }],
+                items: [{ product_id: '', cantidad: 1, descuento: 0, search: '', open: false }],
                 cliente_nombre: '',
                 metodo_pago: 'efectivo',
-                descuento: 0,
 
                 openModal() {
-                    this.items = [{ product_id: '', cantidad: 1, search: '', open: false }];
+                    this.items = [{ product_id: '', cantidad: 1, descuento: 0, search: '', open: false }];
                     this.cliente_nombre = '';
                     this.metodo_pago = 'efectivo';
-                    this.descuento = 0;
                     this.openCreateModal = true;
                 },
 
                 addItem() {
-                    this.items.push({ product_id: '', cantidad: 1, search: '', open: false });
+                    this.items.push({ product_id: '', cantidad: 1, descuento: 0, search: '', open: false });
                 },
 
                 removeItem(index) {
@@ -314,15 +323,24 @@
                 lineTotal(item) {
                     const product = this.products.find(p => p.id === item.product_id);
                     if (!product || !item.cantidad) return 0;
-                    return parseFloat(product.precio_venta) * item.cantidad;
+                    const bruto = parseFloat(product.precio_venta) * item.cantidad;
+                    return Math.max(bruto - (parseFloat(item.descuento) || 0), 0);
                 },
 
                 subtotal() {
-                    return this.items.reduce((sum, item) => sum + this.lineTotal(item), 0);
+                    return this.items.reduce((sum, item) => {
+                        const product = this.products.find(p => p.id === item.product_id);
+                        if (!product || !item.cantidad) return sum;
+                        return sum + (parseFloat(product.precio_venta) * item.cantidad);
+                    }, 0);
+                },
+
+                totalDescuento() {
+                    return this.items.reduce((sum, item) => sum + (parseFloat(item.descuento) || 0), 0);
                 },
 
                 total() {
-                    return Math.max(this.subtotal() - (parseFloat(this.descuento) || 0), 0);
+                    return this.items.reduce((sum, item) => sum + this.lineTotal(item), 0);
                 },
 
                 viewSale(sale) {
