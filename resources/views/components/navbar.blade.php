@@ -53,7 +53,7 @@
                     <!-- VENTAS CON DROPDOWN (Ventas de productos y Ventas de servicios) -->
                     <div class="relative" @click.away="salesDropdown = false">
                         <button @click="salesDropdown = !salesDropdown"
-                                class="flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-semibold transition {{ request()->routeIs('sales.products.*') || request()->routeIs('sales.services.*') ? 'bg-white shadow-sm border border-gray-200 text-pink-600' : 'text-gray-700 hover:text-pink-600 hover:bg-pink-50' }}">
+                                class="flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-semibold transition {{ request()->routeIs('sales.*') || request()->routeIs('service-sales.*') ? 'bg-white shadow-sm border border-gray-200 text-pink-600' : 'text-gray-700 hover:text-pink-600 hover:bg-pink-50' }}">
                             Ventas
                             <svg class="w-4 h-4 transition-transform" :class="{ 'rotate-180': salesDropdown }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
@@ -62,10 +62,10 @@
 
                         <!-- En la versión de escritorio -->
                         <div x-show="salesDropdown" x-cloak class="absolute left-0 mt-2 w-52 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50">
-                            <a href="{{ route('sales.products.index') }}"
-                            class="block px-4 py-2 text-sm {{ request()->routeIs('sales.products.*') ? 'text-pink-600 bg-pink-50 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
-                                Ventas de productos
-                            </a>
+                          <a href="{{ route('sales.products.index') }}"
+                                class="block px-4 py-2 text-sm {{ request()->routeIs('sales.*') ? 'text-pink-600 bg-pink-50 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
+                                    Ventas de productos
+                                </a>
                             <a href="{{ route('service-sales.index') }}"
                             class="block px-4 py-2 text-sm {{ request()->routeIs('service-sales.*') ? 'text-pink-600 bg-pink-50 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
                                 Ventas de servicios
@@ -92,7 +92,6 @@
                                class="block px-4 py-2 text-sm {{ request()->routeIs('reports.sales') ? 'text-pink-600 bg-pink-50 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
                                 Reporte de Ventas
                             </a>
-                            <!-- NUEVA RUTA DE REPORTE DE SERVICIOS -->
                             <a href="{{ route('reports.services') }}"
                                class="block px-4 py-2 text-sm {{ request()->routeIs('reports.services') ? 'text-pink-600 bg-pink-50 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
                                 Reporte de Servicios
@@ -152,17 +151,15 @@
         </div>
 
         <!-- VENTAS MÓVIL -->
-       <!-- En la versión para dispositivos móviles -->
-            <div class="pt-1">
-                <p class="px-3 py-1 text-xs uppercase tracking-wide font-semibold text-gray-400">Ventas</p>
-                <a href="{{ route('sales.products.index') }}" class="block px-3 py-2 rounded-lg text-base font-semibold {{ request()->routeIs('sales.products.*') ? 'bg-gray-100 border border-gray-200 text-pink-600' : 'text-gray-700 hover:bg-pink-50 hover:text-pink-600' }}">Ventas de productos</a>
-                <a href="{{ route('service-sales.index') }}" class="block px-3 py-2 rounded-lg text-base font-semibold {{ request()->routeIs('service-sales.*') ? 'bg-gray-100 border border-gray-200 text-pink-600' : 'text-gray-700 hover:bg-pink-50 hover:text-pink-600' }}">Ventas de servicios</a>
-            </div>
+        <div class="pt-1">
+            <p class="px-3 py-1 text-xs uppercase tracking-wide font-semibold text-gray-400">Ventas</p>
+            <a href="{{ route('sales.products.index') }}" class="block px-3 py-2 rounded-lg text-base font-semibold {{ request()->routeIs('sales.*') ? 'bg-gray-100 border border-gray-200 text-pink-600' : 'text-gray-700 hover:bg-pink-50 hover:text-pink-600' }}">Ventas de productos</a>
+            <a href="{{ route('service-sales.index') }}" class="block px-3 py-2 rounded-lg text-base font-semibold {{ request()->routeIs('service-sales.*') ? 'bg-gray-100 border border-gray-200 text-pink-600' : 'text-gray-700 hover:bg-pink-50 hover:text-pink-600' }}">Ventas de servicios</a>
+        </div>
 
         <a href="#" class="block px-3 py-2 rounded-lg text-base font-semibold text-gray-700 hover:bg-pink-50 hover:text-pink-600">Gastos</a>
 
         <!-- REPORTES MÓVIL -->
-       <!-- REPORTES MÓVIL -->
         <div class="pt-1">
             <p class="px-3 py-1 text-xs uppercase tracking-wide font-semibold text-gray-400">Reportes</p>
             <a href="{{ route('reports.sales') }}" class="block px-3 py-2 rounded-lg text-base font-semibold {{ request()->routeIs('reports.sales') ? 'bg-gray-100 border border-gray-200 text-pink-600' : 'text-gray-700 hover:bg-pink-50 hover:text-pink-600' }}">Reporte de Ventas</a>

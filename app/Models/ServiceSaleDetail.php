@@ -15,6 +15,7 @@ class ServiceSaleDetail extends Model
         'service_sale_id',
         'service_id',
         'employee_id',
+        'cantidad',
         'precio',
         'descuento',
         'subtotal',

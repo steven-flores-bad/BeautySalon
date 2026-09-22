@@ -78,12 +78,19 @@ class ServiceController extends Controller
     }
 
     /**
-     * Elimina un servicio.
+     * Elimina un servicio de forma segura validando relaciones.
      */
     public function destroy(Service $service)
     {
+        // Validación de integridad: Verificamos si está vinculado a ventas previas
+        if ($service->serviceSaleDetails()->exists()) {
+            return redirect()->route('services.index')
+                ->with('error', 'No se puede eliminar el servicio "' . $service->nombre . '" porque ya tiene transacciones o ventas registradas en el historial.');
+        }
+
         $service->delete();
 
-        return redirect()->route('services.index')->with('success', 'Servicio eliminado.');
+        return redirect()->route('services.index')
+            ->with('success', 'Servicio eliminado correctamente.');
     }
 }

@@ -24,14 +24,10 @@
                 </div>
             @endif
 
-            @if ($errors->any())
-                <div class="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg shadow-sm">
-                    <p class="text-sm text-red-700 font-bold">Por favor corrige los siguientes errores:</p>
-                    <ul class="list-disc list-inside text-xs text-red-600 mt-1">
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
+            <!-- MENSAJE DE ERROR (CUANDO TIENE VENTAS ASOCIADAS) -->
+            @if(session('error'))
+                <div class="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg shadow-sm flex items-center justify-between">
+                    <p class="text-sm text-red-700 font-bold">¡Acción bloqueada! {{ session('error') }}</p>
                 </div>
             @endif
 

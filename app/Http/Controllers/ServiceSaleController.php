@@ -16,12 +16,22 @@ class ServiceSaleController extends Controller
     public function index(Request $request)
     {
         $search = $request->input('search');
+        $fechaFiltro = $request->input('fecha');
+        $employeeFiltro = $request->input('employee_id');
 
         $serviceSales = ServiceSale::with(['user', 'details.service', 'details.employee'])
-                            ->withCount('details')
+                            ->withSum('details', 'cantidad')
                             ->when($search, function ($query, $search) {
                                 return $query->where('cliente_nombre', 'like', "%{$search}%")
                                              ->orWhere('id', $search);
+                            })
+                            ->when($fechaFiltro, function ($query, $fechaFiltro) {
+                                return $query->whereDate('created_at', $fechaFiltro);
+                            })
+                            ->when($employeeFiltro, function ($query, $employeeFiltro) {
+                                return $query->whereHas('details', function ($q) use ($employeeFiltro) {
+                                    $q->where('employee_id', $employeeFiltro);
+                                });
                             })
                             ->latest()
                             ->paginate(10)
@@ -31,7 +41,7 @@ class ServiceSaleController extends Controller
         $services = Service::with('category')->orderBy('nombre')->get();
         $employees = Employee::where('activo', true)->orderBy('nombre')->get();
 
-        return view('service_sales.index', compact('serviceSales', 'search', 'services', 'employees'));
+        return view('service_sales.index', compact('serviceSales', 'search', 'fechaFiltro', 'employeeFiltro', 'services', 'employees'));
     }
 
     /**

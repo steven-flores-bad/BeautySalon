@@ -51,16 +51,33 @@
             <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
                 <h1 class="text-2xl font-bold text-gray-900 w-full">Ventas de Servicios</h1>
 
-                <form method="GET" action="{{ route('service-sales.index') }}" class="w-full sm:w-85">
-                    <input type="text" name="search" value="{{ $search ?? '' }}" placeholder="Buscar por cliente o # de venta..."
-                           class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-pink-500 shadow-sm">
-                </form>
-
                 <button @click="openModal()" class="w-full sm:w-auto bg-pink-600 hover:bg-pink-700 text-white font-medium px-5 py-2 rounded-lg shadow transition text-sm flex items-center justify-center gap-2 whitespace-nowrap">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                     Nueva Venta
                 </button>
             </div>
+
+            <!-- Filtros: buscador, fecha y empleado -->
+            <form method="GET" action="{{ route('service-sales.index') }}" class="flex flex-wrap items-center gap-2 mb-6">
+                <input type="text" name="search" value="{{ $search ?? '' }}" placeholder="Buscar por cliente o # de venta..."
+                       class="flex-1 min-w-[200px] px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-pink-500 shadow-sm">
+
+                <input type="date" name="fecha" value="{{ $fechaFiltro ?? '' }}" onchange="this.form.submit()"
+                       class="px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-pink-500 shadow-sm">
+
+                <select name="employee_id" onchange="this.form.submit()" class="px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-pink-500 shadow-sm">
+                    <option value="">Todas las empleadas</option>
+                    @foreach ($employees as $empleado)
+                        <option value="{{ $empleado->id }}" {{ (string) ($employeeFiltro ?? '') === (string) $empleado->id ? 'selected' : '' }}>{{ $empleado->nombre }}</option>
+                    @endforeach
+                </select>
+
+                <button type="submit" class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-600 px-4 py-2 rounded-lg text-sm font-medium shadow-sm">Buscar</button>
+
+                @if($search || $fechaFiltro || $employeeFiltro)
+                    <a href="{{ route('service-sales.index') }}" class="text-xs text-pink-600 hover:underline whitespace-nowrap">Quitar filtros</a>
+                @endif
+            </form>
 
             <!-- Tabla de Ventas de Servicios -->
             <div class="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden">
@@ -71,6 +88,7 @@
                                 <th class="py-3 px-4 font-semibold">#</th>
                                 <th class="py-3 px-4 font-semibold">Fecha</th>
                                 <th class="py-3 px-4 font-semibold">Cliente</th>
+                                <th class="py-3 px-4 font-semibold">Empleados</th>
                                 <th class="py-3 px-4 font-semibold text-center">Servicios</th>
                                 <th class="py-3 px-4 font-semibold">Pago</th>
                                 <th class="py-3 px-4 font-semibold text-right">Total</th>
@@ -84,7 +102,10 @@
                                     <td class="py-3 px-4 text-gray-500 font-mono text-xs">#{{ $venta->id }}</td>
                                     <td class="py-3 px-4 text-gray-600">{{ $venta->created_at->format('d/m/Y H:i') }}</td>
                                     <td class="py-3 px-4 text-gray-900 font-medium">{{ $venta->cliente_nombre ?? 'Cliente general' }}</td>
-                                    <td class="py-3 px-4 text-center text-gray-600">{{ $venta->details_count }}</td>
+                                    <td class="py-3 px-4 text-gray-600 text-xs">
+                                        {{ $venta->details->pluck('employee.nombre')->filter()->unique()->implode(', ') ?: '—' }}
+                                    </td>
+                                    <td class="py-3 px-4 text-center text-gray-600">{{ $venta->details_sum_cantidad ?? 0 }}</td>
                                     <td class="py-3 px-4 text-gray-600 capitalize">{{ $venta->metodo_pago }}</td>
                                     <td class="py-3 px-4 text-right text-pink-600 font-semibold">${{ number_format($venta->total, 2) }}</td>
                                     <td class="py-3 px-4 text-center">
@@ -110,7 +131,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="8" class="text-center py-8 text-gray-400">No hay ventas de servicios registradas todavía.</td>
+                                    <td colspan="9" class="text-center py-8 text-gray-400">No hay ventas de servicios registradas todavía.</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -152,7 +173,7 @@
                         <thead>
                             <tr class="bg-gray-50 text-gray-500 text-xs uppercase">
                                 <th class="text-left py-2 px-3 rounded-tl-lg">Servicio</th>
-                                <th class="text-left py-2 px-3 w-36">Atendió</th>a
+                                <th class="text-left py-2 px-3 w-36">Atendió</th>
                                 <th class="text-center py-2 px-3 w-16">Cant.</th>
                                 <th class="text-center py-2 px-3 w-20">Desc. ($)</th>
                                 <th class="text-center py-2 px-3 w-20">Com. (%)</th>
@@ -217,6 +238,11 @@
                     </button>
                 </div>
 
+                <div class="mb-4">
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Notas (opcional)</label>
+                    <textarea name="notas" x-model="notas" rows="2" placeholder="Ej. cliente pidió reagendar, alergia a producto X, etc." class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-pink-500 focus:border-pink-500"></textarea>
+                </div>
+
                 <div class="flex justify-end mb-4">
                     <div class="text-right space-y-0.5">
                         <p class="text-xs text-gray-500">Subtotal: <span x-text="'$' + subtotal().toFixed(2)"></span></p>
@@ -238,7 +264,8 @@
     <div x-show="openViewModal" class="fixed inset-0 z-50 overflow-y-auto bg-black/50 flex items-center justify-center p-4" x-cloak>
         <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-xl relative" @click.away="openViewModal = false">
             <h3 class="text-lg font-bold text-gray-900 mb-1">Venta de Servicios <span x-text="'#' + selectedSale.id"></span></h3>
-            <p class="text-xs text-gray-400 mb-4" x-text="selectedSale.cliente_nombre || 'Cliente general'"></p>
+            <p class="text-xs text-gray-400 mb-1" x-text="selectedSale.cliente_nombre || 'Cliente general'"></p>
+            <p class="text-xs text-gray-400 mb-4" x-show="selectedSale.notas" x-text="'Notas: ' + selectedSale.notas"></p>
 
             <div class="border border-gray-200 rounded-lg overflow-hidden mb-4">
                 <table class="w-full text-sm">
@@ -290,11 +317,13 @@
                 items: [{ service_id: '', employee_id: '', cantidad: 1, descuento: 0, comision_porcentaje: 0, search: '', open: false }],
                 cliente_nombre: '',
                 metodo_pago: 'efectivo',
+                notas: '',
 
                 openModal() {
                     this.items = [{ service_id: '', employee_id: '', cantidad: 1, descuento: 0, comision_porcentaje: 0, search: '', open: false }];
                     this.cliente_nombre = '';
                     this.metodo_pago = 'efectivo';
+                    this.notas = '';
                     this.openCreateModal = true;
                 },
 
