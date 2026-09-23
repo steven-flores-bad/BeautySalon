@@ -10,7 +10,7 @@
         [x-cloak] { display: none !important; }
     </style>
 </head>
-<body class="bg-gray-50 text-gray-800 font-sans antialiased" x-data="{ openCreateModal: false, openEditModal: false, editForm: {} }">
+<body class="bg-gray-50 text-gray-800 font-sans antialiased" x-data="{ openCreateModal: false, openEditModal: false, openDeleteModal: false, editForm: {}, deleteForm: {} }">
 
     <div class="min-h-screen flex flex-col">
 
@@ -85,13 +85,11 @@
                                                 class="text-indigo-600 hover:text-indigo-900 font-medium text-xs bg-indigo-50 px-2.5 py-1 rounded-md transition">
                                             Editar
                                         </button>
-                                        <form action="{{ route('services.destroy', $service->id) }}" method="POST" class="inline-block" onsubmit="return confirm('¿Estás seguro de eliminar este servicio?');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="text-red-600 hover:text-red-900 font-medium text-xs bg-red-50 px-2.5 py-1 rounded-md transition">
-                                                Eliminar
-                                            </button>
-                                        </form>
+                                        <button type="button"
+                                                @click="openDeleteModal = true; deleteForm = { id: {{ $service->id }}, nombre: @js($service->nombre) }"
+                                                class="text-red-600 hover:text-red-900 font-medium text-xs bg-red-50 px-2.5 py-1 rounded-md transition">
+                                            Eliminar
+                                        </button>
                                     </td>
                                 </tr>
                             @empty
@@ -179,6 +177,34 @@
                 <div class="mt-6 flex justify-end gap-3">
                     <button type="button" @click="openEditModal = false" class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium">Cancelar</button>
                     <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-lg text-sm font-medium shadow">Actualizar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL CONFIRMAR ELIMINACIÓN -->
+    <div x-show="openDeleteModal" class="fixed inset-0 z-50 overflow-y-auto bg-black/50 flex items-center justify-center p-4" x-cloak>
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl relative" @click.away="openDeleteModal = false">
+            <div class="flex items-start gap-4 mb-5">
+                <div class="flex-shrink-0 w-11 h-11 rounded-full bg-red-100 flex items-center justify-center">
+                    <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-gray-900">Eliminar servicio</h3>
+                    <p class="text-sm text-gray-500 mt-1">
+                        ¿Estás seguro de eliminar <span class="font-semibold text-gray-800" x-text="deleteForm.nombre"></span>?
+                        Esta acción no se puede deshacer.
+                    </p>
+                </div>
+            </div>
+            <form :action="'/services/' + deleteForm.id" method="POST">
+                @csrf
+                @method('DELETE')
+                <div class="flex justify-end gap-3">
+                    <button type="button" @click="openDeleteModal = false" class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium">Cancelar</button>
+                    <button type="submit" class="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-lg text-sm font-medium shadow">Sí, eliminar</button>
                 </div>
             </form>
         </div>
