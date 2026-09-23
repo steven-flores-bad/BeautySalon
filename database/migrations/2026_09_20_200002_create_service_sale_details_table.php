@@ -17,6 +17,7 @@ return new class extends Migration
             // Quién atendió este servicio específico. restrict: no se puede borrar
             // un empleado si tiene servicios en su historial (protege comisiones pasadas).
             $table->foreignId('employee_id')->constrained('employees')->onDelete('restrict');
+            $table->integer('cantidad')->default(1);
 
             // Precio "congelado" al momento de la venta (por si el precio del
             // servicio cambia después, el historial no se ve afectado).

@@ -15,13 +15,14 @@ class ServiceController extends Controller
     {
         $search = $request->input('search');
 
-        $sortable = ['nombre', 'categoria', 'precio'];
+        $sortable = ['codigo', 'nombre', 'categoria', 'precio'];
         $sort = in_array($request->input('sort'), $sortable) ? $request->input('sort') : 'nombre';
         $direction = $request->input('direction') === 'desc' ? 'desc' : 'asc';
 
         $query = Service::with('category')
                     ->when($search, function ($query, $search) {
                         return $query->where('nombre', 'like', "%{$search}%")
+                                     ->orWhere('codigo', 'like', "%{$search}%")
                                      ->orWhereHas('category', function ($q) use ($search) {
                                          $q->where('nombre', 'like', "%{$search}%");
                                      });
@@ -44,18 +45,25 @@ class ServiceController extends Controller
     }
 
     /**
-     * Almacena un nuevo servicio.
+     * Almacena un nuevo servicio y le genera un código correlativo automático.
      */
     public function store(Request $request)
     {
         $validated = $request->validate([
+            // 'codigo' no viene del formulario, se genera automáticamente abajo
             'service_category_id' => 'required|exists:service_categories,id',
             'nombre' => 'required|string|max:150',
             'precio' => 'required|numeric|min:0',
             'descripcion' => 'nullable|string',
         ]);
 
-        Service::create($validated);
+        $service = Service::create($validated);
+
+        // El código depende del id autoincremental, así que se genera después
+        // de crear el registro y se guarda en una segunda escritura.
+        $service->update([
+            'codigo' => 'SERV-' . str_pad($service->id, 5, '0', STR_PAD_LEFT),
+        ]);
 
         return redirect()->route('services.index')->with('success', 'Servicio registrado exitosamente.');
     }

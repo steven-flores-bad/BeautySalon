@@ -10,6 +10,7 @@ return new class extends Migration
     {
         Schema::create('services', function (Blueprint $table) {
             $table->id();
+            $table->string('codigo')->nullable(); // Código del servicio
 
             $table->foreignId('service_category_id')->constrained('service_categories')->onDelete('cascade');
 

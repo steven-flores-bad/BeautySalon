@@ -12,6 +12,7 @@ class Service extends Model
     protected $table = 'services';
 
     protected $fillable = [
+        'codigo',
         'service_category_id',
         'nombre',
         'precio',
@@ -25,6 +26,7 @@ class Service extends Model
     {
         return $this->belongsTo(ServiceCategory::class, 'service_category_id');
     }
+
     public function serviceSaleDetails()
     {
         return $this->hasMany(ServiceSaleDetail::class, 'service_id');
