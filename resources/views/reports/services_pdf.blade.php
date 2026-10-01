@@ -62,12 +62,36 @@
         </tr>
     </table>
 
+    <table class="resumen" style="margin-top:10px;">
+        <tr>
+            <td>
+                <span class="label">Subtotal (sin IVA)</span>
+                <span class="valor" style="font-size:14px;">${{ number_format($totalSubtotal, 2) }}</span>
+            </td>
+            @if($totalDescuentos > 0)
+                <td>
+                    <span class="label">Descuentos Aplicados</span>
+                    <span class="valor" style="font-size:14px; color:#dc2626;">-${{ number_format($totalDescuentos, 2) }}</span>
+                </td>
+            @endif
+            <td>
+                <span class="label">IVA (13%)</span>
+                <span class="valor" style="font-size:14px; color:#4f46e5;">+${{ number_format($totalIva, 2) }}</span>
+            </td>
+            <td>
+                <span class="label">Total con IVA</span>
+                <span class="valor total" style="font-size:14px;">${{ number_format($totalPeriodo, 2) }}</span>
+            </td>
+        </tr>
+    </table>
+
     @if($porMetodoPago->isNotEmpty())
         <div class="metodos">
-            @foreach ($porMetodoPago as $metodo => $monto)
+            @foreach (['efectivo', 'tarjeta', 'transferencia'] as $metodo)
                 <span>
                     <span class="m-label">{{ $metodo }}</span>
-                    <span class="m-valor">${{ number_format($monto, 2) }}</span>
+                    <span class="m-valor">${{ number_format(data_get($porMetodoPago, "$metodo.monto", 0), 2) }}</span>
+                    <span style="display:block; font-size:8px; color:#999;">{{ data_get($porMetodoPago, "$metodo.cantidad", 0) }} {{ (data_get($porMetodoPago, "$metodo.cantidad", 0)) === 1 ? 'venta' : 'ventas' }}</span>
                 </span>
             @endforeach
         </div>
@@ -83,13 +107,15 @@
                 <th class="num">Precio</th>
                 <th class="num">Descuento</th>
                 <th class="num">Subtotal</th>
+                <th>Pago</th>
+                <th class="num">IVA</th>
                 <th class="num">Comisión</th>
             </tr>
         </thead>
         <tbody>
             @forelse ($serviciosVendidos as $fechaVenta => $detallesDelDia)
                 <tr style="background:#f3f4f6;">
-                    <td colspan="8" style="font-weight:bold; text-transform:uppercase; font-size:8px; color:#666;">
+                    <td colspan="10" style="font-weight:bold; text-transform:uppercase; font-size:8px; color:#666;">
                         {{ \Carbon\Carbon::parse($fechaVenta)->translatedFormat('l, d \d\e F') }}
                     </td>
                 </tr>
@@ -108,12 +134,14 @@
                             @endif
                         </td>
                         <td class="num">${{ number_format($detalle->subtotal, 2) }}</td>
+                        <td style="text-transform:capitalize;">{{ $detalle->venta_metodo_pago }}</td>
+                        <td class="num" style="color:#4f46e5;">${{ number_format($detalle->venta_iva, 2) }}</td>
                         <td class="num" style="color:#4f46e5;">${{ number_format($detalle->comision_monto, 2) }}</td>
                     </tr>
                 @endforeach
             @empty
                 <tr>
-                    <td colspan="8" style="text-align:center; color:#999; padding: 20px;">No se registraron servicios en este período.</td>
+                    <td colspan="10" style="text-align:center; color:#999; padding: 20px;">No se registraron servicios en este período.</td>
                 </tr>
             @endforelse
         </tbody>
@@ -122,6 +150,8 @@
                 <tr>
                     <td colspan="6" class="num">Totales del período:</td>
                     <td class="num">${{ number_format($totalPeriodo, 2) }}</td>
+                    <td></td>
+                    <td class="num">${{ number_format($totalIva, 2) }}</td>
                     <td class="num">${{ number_format($totalComisiones, 2) }}</td>
                 </tr>
             </tfoot>

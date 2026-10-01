@@ -1,168 +1,147 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inventario - Salón de Belleza</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Alpine.js para interactividad de modales y menús -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <style>
-        [x-cloak] { display: none !important; }
-    </style>
-</head>
-<body class="bg-gray-50 text-gray-800 font-sans antialiased" x-data="{ openCreateModal: false, openEditModal: false, editForm: {} }">
+@extends('layouts.app')
 
-    <div class="min-h-screen flex flex-col">
+@section('title', 'Inventario - Salón de Belleza')
+@section('max-width', 'max-w-7xl')
 
-        <!-- BARRA DE NAVEGACIÓN GLOBAL -->
-        @include('components.navbar')
+@section('body-data')
+{ openCreateModal: false, openEditModal: false, editForm: {} }
+@endsection
 
-        <!-- Contenido Principal -->
-        <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+@section('content')
+    <!-- Errores de validación -->
+    @if ($errors->any())
+        <div class="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg shadow-sm">
+            <p class="text-sm text-red-700 font-bold">Por favor corrige los siguientes errores:</p>
+            <ul class="list-disc list-inside text-xs text-red-600 mt-1">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
 
-            <!-- Mensaje de éxito -->
-            @if(session('success'))
-                <div class="mb-6 bg-emerald-50 border-l-4 border-emerald-500 p-4 rounded-r-lg shadow-sm">
-                    <p class="text-sm text-emerald-700 font-medium">{{ session('success') }}</p>
-                </div>
-            @endif
+    <!-- Barra de Acciones y Buscador -->
+    <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+        <form method="GET" action="{{ route('products.index') }}" class="w-full sm:w-80">
+            <input type="text" name="search" value="{{ $search ?? '' }}" placeholder="Buscar por producto, código o categoría..."
+                   class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-pink-500 shadow-sm">
+        </form>
 
-            <!-- Errores de validación -->
-            @if ($errors->any())
-                <div class="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg shadow-sm">
-                    <p class="text-sm text-red-700 font-bold">Por favor corrige los siguientes errores:</p>
-                    <ul class="list-disc list-inside text-xs text-red-600 mt-1">
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </div>
-            @endif
-
-            <!-- Barra de Acciones y Buscador -->
-            <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-                <form method="GET" action="{{ route('products.index') }}" class="w-full sm:w-80">
-                    <input type="text" name="search" value="{{ $search ?? '' }}" placeholder="Buscar por producto, código o categoría..."
-                           class="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-pink-500 shadow-sm">
-                </form>
-
-                <button @click="openCreateModal = true" class="w-full sm:w-auto bg-pink-600 hover:bg-pink-700 text-white font-medium px-5 py-2 rounded-lg shadow transition text-sm flex items-center justify-center gap-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                    Nuevo Producto
-                </button>
-            </div>
-
-            <!-- Tabla de Datos Moderna -->
-            <div class="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="bg-gray-100/70 text-gray-600 uppercase text-xs tracking-wider border-b border-gray-200">
-                                @php
-                                    $columns = [
-                                        'codigo' => 'Código',
-                                        'categoria' => 'Categoría',
-                                        'producto' => 'Producto',
-                                        'marca' => 'Marca / Presentación',
-                                    ];
-                                @endphp
-                                @foreach ($columns as $key => $label)
-                                    <th class="py-3 px-4 font-semibold">
-                                        <a href="{{ route('products.index', array_merge(request()->query(), ['sort' => $key, 'direction' => ($sort === $key && $direction === 'asc') ? 'desc' : 'asc'])) }}"
-                                           class="flex items-center gap-1 hover:text-gray-900 transition">
-                                            {{ $label }}
-                                            @if ($sort === $key)
-                                                <span class="text-pink-600">{{ $direction === 'asc' ? '▲' : '▼' }}</span>
-                                            @else
-                                                <span class="text-gray-300">↕</span>
-                                            @endif
-                                        </a>
-                                    </th>
-                                @endforeach
-                                <th class="py-3 px-4 font-semibold text-center">
-                                    <a href="{{ route('products.index', array_merge(request()->query(), ['sort' => 'existencia', 'direction' => ($sort === 'existencia' && $direction === 'asc') ? 'desc' : 'asc'])) }}"
-                                       class="flex items-center justify-center gap-1 hover:text-gray-900 transition">
-                                        Existencia
-                                        @if ($sort === 'existencia')
-                                            <span class="text-pink-600">{{ $direction === 'asc' ? '▲' : '▼' }}</span>
-                                        @else
-                                            <span class="text-gray-300">↕</span>
-                                        @endif
-                                    </a>
-                                </th>
-                                <th class="py-3 px-4 font-semibold">
-                                    <a href="{{ route('products.index', array_merge(request()->query(), ['sort' => 'precio_compra', 'direction' => ($sort === 'precio_compra' && $direction === 'asc') ? 'desc' : 'asc'])) }}"
-                                       class="flex items-center gap-1 hover:text-gray-900 transition">
-                                        P. Compra
-                                        @if ($sort === 'precio_compra')
-                                            <span class="text-pink-600">{{ $direction === 'asc' ? '▲' : '▼' }}</span>
-                                        @else
-                                            <span class="text-gray-300">↕</span>
-                                        @endif
-                                    </a>
-                                </th>
-                                <th class="py-3 px-4 font-semibold">
-                                    <a href="{{ route('products.index', array_merge(request()->query(), ['sort' => 'precio_venta', 'direction' => ($sort === 'precio_venta' && $direction === 'asc') ? 'desc' : 'asc'])) }}"
-                                       class="flex items-center gap-1 hover:text-gray-900 transition">
-                                        P. Venta
-                                        @if ($sort === 'precio_venta')
-                                            <span class="text-pink-600">{{ $direction === 'asc' ? '▲' : '▼' }}</span>
-                                        @else
-                                            <span class="text-gray-300">↕</span>
-                                        @endif
-                                    </a>
-                                </th>
-                                <th class="py-3 px-4 font-semibold text-right">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-200 text-sm">
-                            @forelse ($products as $product)
-                                <tr class="hover:bg-gray-50/50 transition">
-                                    <td class="py-3 px-4 text-gray-500 font-mono text-xs">{{ $product->codigo ?? 'N/A' }}</td>
-                                    <td class="py-3 px-4 font-medium text-gray-800">{{ $product->category->nombre ?? 'Sin categoría' }}</td>
-                                    <td class="py-3 px-4 text-gray-900 font-semibold">{{ $product->producto }}</td>
-                                    <td class="py-3 px-4 text-gray-500">{{ $product->marca }} @if($product->presentacion_valor)<span class="text-xs text-gray-400">({{ rtrim(rtrim(number_format($product->presentacion_valor, 2), '0'), '.') }} {{ $product->presentacion_unidad }})</span>@endif</td>
-                                    <td class="py-3 px-4 text-center">
-                                        <span class="px-2.5 py-1 rounded-full text-xs font-bold {{ $product->existencia <= $product->stock_minimo ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700' }}">
-                                            {{ $product->existencia }}
-                                        </span>
-                                    </td>
-                                    <td class="py-3 px-4 text-gray-600">${{ number_format($product->precio_compra, 2) }}</td>
-                                    <td class="py-3 px-4 text-pink-600 font-semibold">${{ number_format($product->precio_venta, 2) }}</td>
-                                    <td class="py-3 px-4 text-right space-x-2">
-                                        <!-- Botón Editar -->
-                                        <button @click="openEditModal = true; editForm = {{ Illuminate\Support\Js::from($product) }}"
-                                                class="text-indigo-600 hover:text-indigo-900 font-medium text-xs bg-indigo-50 px-2.5 py-1 rounded-md transition">
-                                            Editar
-                                        </button>
-                                        <!-- Botón Eliminar -->
-                                        <form action="{{ route('products.destroy', $product->id) }}" method="POST" class="inline-block" onsubmit="return confirm('¿Estás seguro de eliminar este producto?');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="text-red-600 hover:text-red-900 font-medium text-xs bg-red-50 px-2.5 py-1 rounded-md transition">
-                                                Eliminar
-                                            </button>
-                                        </form>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
-                                    <td colspan="8" class="text-center py-8 text-gray-400">No hay productos registrados todavía.</td>
-                                </tr>
-                            @endforelse
-                        </tbody>
-                    </table>
-                </div>
-                <!-- Paginación -->
-                <div class="p-4 border-t border-gray-200">
-                    {{ $products->links() }}
-                </div>
-            </div>
-        </main>
+        <button @click="openCreateModal = true" class="w-full sm:w-auto bg-pink-600 hover:bg-pink-700 text-white font-medium px-5 py-2 rounded-lg shadow transition text-sm flex items-center justify-center gap-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            Nuevo Producto
+        </button>
     </div>
 
+    <!-- Tabla de Datos Moderna -->
+    <div class="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-gray-100/70 text-gray-600 uppercase text-xs tracking-wider border-b border-gray-200">
+                        @php
+                            $columns = [
+                                'codigo' => 'Código',
+                                'categoria' => 'Categoría',
+                                'producto' => 'Producto',
+                                'marca' => 'Marca / Presentación',
+                            ];
+                        @endphp
+                        @foreach ($columns as $key => $label)
+                            <th class="py-3 px-4 font-semibold">
+                                <a href="{{ route('products.index', array_merge(request()->query(), ['sort' => $key, 'direction' => ($sort === $key && $direction === 'asc') ? 'desc' : 'asc'])) }}"
+                                   class="flex items-center gap-1 hover:text-gray-900 transition">
+                                    {{ $label }}
+                                    @if ($sort === $key)
+                                        <span class="text-pink-600">{{ $direction === 'asc' ? '▲' : '▼' }}</span>
+                                    @else
+                                        <span class="text-gray-300">↕</span>
+                                    @endif
+                                </a>
+                            </th>
+                        @endforeach
+                        <th class="py-3 px-4 font-semibold text-center">
+                            <a href="{{ route('products.index', array_merge(request()->query(), ['sort' => 'existencia', 'direction' => ($sort === 'existencia' && $direction === 'asc') ? 'desc' : 'asc'])) }}"
+                               class="flex items-center justify-center gap-1 hover:text-gray-900 transition">
+                                Existencia
+                                @if ($sort === 'existencia')
+                                    <span class="text-pink-600">{{ $direction === 'asc' ? '▲' : '▼' }}</span>
+                                @else
+                                    <span class="text-gray-300">↕</span>
+                                @endif
+                            </a>
+                        </th>
+                        <th class="py-3 px-4 font-semibold">
+                            <a href="{{ route('products.index', array_merge(request()->query(), ['sort' => 'precio_compra', 'direction' => ($sort === 'precio_compra' && $direction === 'asc') ? 'desc' : 'asc'])) }}"
+                               class="flex items-center gap-1 hover:text-gray-900 transition">
+                                P. Compra
+                                @if ($sort === 'precio_compra')
+                                    <span class="text-pink-600">{{ $direction === 'asc' ? '▲' : '▼' }}</span>
+                                @else
+                                    <span class="text-gray-300">↕</span>
+                                @endif
+                            </a>
+                        </th>
+                        <th class="py-3 px-4 font-semibold">
+                            <a href="{{ route('products.index', array_merge(request()->query(), ['sort' => 'precio_venta', 'direction' => ($sort === 'precio_venta' && $direction === 'asc') ? 'desc' : 'asc'])) }}"
+                               class="flex items-center gap-1 hover:text-gray-900 transition">
+                                P. Venta
+                                @if ($sort === 'precio_venta')
+                                    <span class="text-pink-600">{{ $direction === 'asc' ? '▲' : '▼' }}</span>
+                                @else
+                                    <span class="text-gray-300">↕</span>
+                                @endif
+                            </a>
+                        </th>
+                        <th class="py-3 px-4 font-semibold text-right">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 text-sm">
+                    @forelse ($products as $product)
+                        <tr class="hover:bg-gray-50/50 transition">
+                            <td class="py-3 px-4 text-gray-500 font-mono text-xs">{{ $product->codigo ?? 'N/A' }}</td>
+                            <td class="py-3 px-4 font-medium text-gray-800">{{ $product->category->nombre ?? 'Sin categoría' }}</td>
+                            <td class="py-3 px-4 text-gray-900 font-semibold">{{ $product->producto }}</td>
+                            <td class="py-3 px-4 text-gray-500">{{ $product->marca }} @if($product->presentacion_valor)<span class="text-xs text-gray-400">({{ rtrim(rtrim(number_format($product->presentacion_valor, 2), '0'), '.') }} {{ $product->presentacion_unidad }})</span>@endif</td>
+                            <td class="py-3 px-4 text-center">
+                                <span class="px-2.5 py-1 rounded-full text-xs font-bold {{ $product->existencia <= $product->stock_minimo ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700' }}">
+                                    {{ $product->existencia }}
+                                </span>
+                            </td>
+                            <td class="py-3 px-4 text-gray-600">${{ number_format($product->precio_compra, 2) }}</td>
+                            <td class="py-3 px-4 text-pink-600 font-semibold">${{ number_format($product->precio_venta, 2) }}</td>
+                            <td class="py-3 px-4 text-right space-x-2">
+                                <!-- Botón Editar -->
+                                <button @click="openEditModal = true; editForm = {{ Illuminate\Support\Js::from($product) }}"
+                                        class="text-indigo-600 hover:text-indigo-900 font-medium text-xs bg-indigo-50 px-2.5 py-1 rounded-md transition">
+                                    Editar
+                                </button>
+                                <!-- Botón Eliminar -->
+                                <form action="{{ route('products.destroy', $product->id) }}" method="POST" class="inline-block" @submit.prevent="$dispatch('confirm-action', { form: $el, type: 'delete', title: 'Eliminar producto', name: @js($product->producto), message: 'Esta acción no se puede deshacer.' })">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="text-red-600 hover:text-red-900 font-medium text-xs bg-red-50 px-2.5 py-1 rounded-md transition">
+                                        Eliminar
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="8" class="text-center py-8 text-gray-400">No hay productos registrados todavía.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+        <!-- Paginación -->
+        <div class="p-4 border-t border-gray-200">
+            {{ $products->links() }}
+        </div>
+    </div>
+@endsection
+
+@section('modals')
     <!-- MODAL CREAR -->
     <div x-show="openCreateModal" class="fixed inset-0 z-50 overflow-y-auto bg-black/50 flex items-center justify-center p-4" x-cloak>
         <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl relative" @click.away="openCreateModal = false">
@@ -298,6 +277,4 @@
             </form>
         </div>
     </div>
-
-</body>
-</html>
+@endsection

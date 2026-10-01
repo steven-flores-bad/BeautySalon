@@ -156,8 +156,12 @@ class ReportController extends Controller
         $totalPeriodo = $ventasDelPeriodo->sum('total');
         $totalSubtotal = $ventasDelPeriodo->sum('subtotal');
         $totalDescuentos = $ventasDelPeriodo->sum('descuento');
+        $totalIva = $ventasDelPeriodo->sum('iva');
         $totalVentas = $ventasDelPeriodo->count();
         $ticketPromedio = $totalVentas > 0 ? $totalPeriodo / $totalVentas : 0;
+
+        // Efectivo real: lo único que entra físicamente a la caja.
+        $totalEfectivo = $ventasDelPeriodo->where('metodo_pago', 'efectivo')->sum('total');
 
         $productosVendidos = SaleDetail::select(
                                 'sale_details.*',
@@ -176,7 +180,10 @@ class ReportController extends Controller
                             ->sortKeys();
 
         $porMetodoPago = $ventasDelPeriodo->groupBy('metodo_pago')->map(function ($grupo) {
-            return $grupo->sum('total');
+            return [
+                'monto' => $grupo->sum('total'),
+                'cantidad' => $grupo->count(),
+            ];
         });
 
         return [
@@ -190,6 +197,8 @@ class ReportController extends Controller
             'totalPeriodo' => $totalPeriodo,
             'totalSubtotal' => $totalSubtotal,
             'totalDescuentos' => $totalDescuentos,
+            'totalIva' => $totalIva,
+            'totalEfectivo' => $totalEfectivo,
             'totalVentas' => $totalVentas,
             'ticketPromedio' => $ticketPromedio,
             'productosVendidos' => $productosVendidos,
@@ -221,8 +230,12 @@ class ReportController extends Controller
         $totalPeriodo = $ventasDelPeriodo->sum('total');
         $totalSubtotal = $ventasDelPeriodo->sum('subtotal');
         $totalDescuentos = $ventasDelPeriodo->sum('descuento');
+        $totalIva = $ventasDelPeriodo->sum('iva');
         $totalVentas = $ventasDelPeriodo->count();
         $ticketPromedio = $totalVentas > 0 ? $totalPeriodo / $totalVentas : 0;
+
+        // Efectivo real: lo único que entra físicamente a la caja.
+        $totalEfectivo = $ventasDelPeriodo->where('metodo_pago', 'efectivo')->sum('total');
 
         // Una sola consulta con todas las líneas de servicio del período,
         // que luego se reutiliza para armar AMBAS tablas (por fecha y por
@@ -231,7 +244,9 @@ class ReportController extends Controller
                                 'service_sale_details.*',
                                 DB::raw('DATE(service_sales.created_at) as fecha_venta'),
                                 'service_sales.id as venta_id',
-                                'service_sales.cliente_nombre as cliente_nombre'
+                                'service_sales.cliente_nombre as cliente_nombre',
+                                'service_sales.metodo_pago as venta_metodo_pago',
+                                'service_sales.iva as venta_iva'
                             )
                             ->join('service_sales', 'service_sales.id', '=', 'service_sale_details.service_sale_id')
                             ->where('service_sales.estado', 'completada')
@@ -263,7 +278,10 @@ class ReportController extends Controller
                             ->values();
 
         $porMetodoPago = $ventasDelPeriodo->groupBy('metodo_pago')->map(function ($grupo) {
-            return $grupo->sum('total');
+            return [
+                'monto' => $grupo->sum('total'),
+                'cantidad' => $grupo->count(),
+            ];
         });
 
         return [
@@ -276,6 +294,8 @@ class ReportController extends Controller
             'totalPeriodo' => $totalPeriodo,
             'totalSubtotal' => $totalSubtotal,
             'totalDescuentos' => $totalDescuentos,
+            'totalIva' => $totalIva,
+            'totalEfectivo' => $totalEfectivo,
             'totalVentas' => $totalVentas,
             'ticketPromedio' => $ticketPromedio,
             'totalComisiones' => $totalComisiones,

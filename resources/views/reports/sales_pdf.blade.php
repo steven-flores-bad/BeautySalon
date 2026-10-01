@@ -8,7 +8,7 @@
         .subtitle { color: #999; font-size: 11px; margin-top: 2px; margin-bottom: 20px; }
 
         .resumen { width: 100%; margin-bottom: 20px; }
-        .resumen td { width: 33%; padding: 10px; border: 1px solid #e5e7eb; }
+        .resumen td { padding: 10px; border: 1px solid #e5e7eb; }
         .resumen .label { font-size: 9px; text-transform: uppercase; color: #999; display: block; margin-bottom: 4px; }
         .resumen .valor { font-size: 18px; font-weight: bold; color: #333; }
         .resumen .valor.total { color: #db2777; }
@@ -57,31 +57,36 @@
         </tr>
     </table>
 
-    @if($totalDescuentos > 0)
-        <table class="resumen" style="margin-bottom:15px;">
-            <tr>
-                <td>
-                    <span class="label">Subtotal (sin descuentos)</span>
-                    <span class="valor" style="font-size:14px;">${{ number_format($totalSubtotal, 2) }}</span>
-                </td>
+    <table class="resumen" style="margin-bottom:15px;">
+        <tr>
+            <td>
+                <span class="label">Subtotal (sin IVA)</span>
+                <span class="valor" style="font-size:14px;">${{ number_format($totalSubtotal, 2) }}</span>
+            </td>
+            @if($totalDescuentos > 0)
                 <td>
                     <span class="label">Descuentos Aplicados</span>
                     <span class="valor" style="font-size:14px; color:#dc2626;">-${{ number_format($totalDescuentos, 2) }}</span>
                 </td>
-                <td>
-                    <span class="label">Total Neto</span>
-                    <span class="valor total" style="font-size:14px;">${{ number_format($totalPeriodo, 2) }}</span>
-                </td>
-            </tr>
-        </table>
-    @endif
+            @endif
+            <td>
+                <span class="label">IVA (13%)</span>
+                <span class="valor" style="font-size:14px; color:#4f46e5;">+${{ number_format($totalIva, 2) }}</span>
+            </td>
+            <td>
+                <span class="label">Total con IVA</span>
+                <span class="valor total" style="font-size:14px;">${{ number_format($totalPeriodo, 2) }}</span>
+            </td>
+        </tr>
+    </table>
 
     @if($porMetodoPago->isNotEmpty())
         <div class="metodos">
-            @foreach ($porMetodoPago as $metodo => $monto)
+            @foreach (['efectivo', 'tarjeta', 'transferencia'] as $metodo)
                 <span>
                     <span class="m-label">{{ $metodo }}</span>
-                    <span class="m-valor">${{ number_format($monto, 2) }}</span>
+                    <span class="m-valor">${{ number_format(data_get($porMetodoPago, "$metodo.monto", 0), 2) }}</span>
+                    <span style="display:block; font-size:8px; color:#999;">{{ data_get($porMetodoPago, "$metodo.cantidad", 0) }} {{ (data_get($porMetodoPago, "$metodo.cantidad", 0)) === 1 ? 'venta' : 'ventas' }}</span>
                 </span>
             @endforeach
         </div>

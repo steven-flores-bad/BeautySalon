@@ -17,7 +17,12 @@
                     <a href="{{ route('inicio') }}" class="px-3 py-2 rounded-lg text-sm font-semibold transition {{ request()->routeIs('inicio') ? 'bg-white shadow-sm border border-gray-200 text-pink-600' : 'text-gray-700 hover:text-pink-600 hover:bg-pink-50' }}">
                         Inicio
                     </a>
-                    
+
+                    <!-- CAJA CON VALIDACIÓN DINÁMICA -->
+                    <a href="{{ route('cash-register.index') }}" class="px-3 py-2 rounded-lg text-sm font-semibold transition {{ request()->routeIs('cash-register.*') ? 'bg-white shadow-sm border border-gray-200 text-pink-600' : 'text-gray-700 hover:text-pink-600 hover:bg-pink-50' }}">
+                        Caja
+                    </a>
+
                     <!-- PRODUCTOS CON VALIDACIÓN DINÁMICA -->
                     <a href="{{ route('products.index') }}" class="px-3 py-2 rounded-lg text-sm font-semibold transition {{ request()->routeIs('products.*') ? 'bg-white shadow-sm border border-gray-200 text-pink-600' : 'text-gray-700 hover:text-pink-600 hover:bg-pink-50' }}">
                         Productos
@@ -62,12 +67,12 @@
 
                         <!-- En la versión de escritorio -->
                         <div x-show="salesDropdown" x-cloak class="absolute left-0 mt-2 w-52 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50">
-                          <a href="{{ route('sales.products.index') }}"
-                                class="block px-4 py-2 text-sm {{ request()->routeIs('sales.*') ? 'text-pink-600 bg-pink-50 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
-                                    Ventas de productos
-                                </a>
+                            <a href="{{ route('sales.index') }}"
+                               class="block px-4 py-2 text-sm {{ request()->routeIs('sales.*') ? 'text-pink-600 bg-pink-50 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
+                                Ventas de productos
+                            </a>
                             <a href="{{ route('service-sales.index') }}"
-                            class="block px-4 py-2 text-sm {{ request()->routeIs('service-sales.*') ? 'text-pink-600 bg-pink-50 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
+                               class="block px-4 py-2 text-sm {{ request()->routeIs('service-sales.*') ? 'text-pink-600 bg-pink-50 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
                                 Ventas de servicios
                             </a>
                         </div>
@@ -140,6 +145,7 @@
     <!-- Menú Desplegable para Móviles -->
     <div x-show="mobileMenuOpen" x-cloak class="md:hidden border-t border-gray-200 bg-white px-4 pt-2 pb-4 space-y-1">
         <a href="{{ route('inicio') }}" class="block px-3 py-2 rounded-lg text-base font-semibold {{ request()->routeIs('inicio') ? 'bg-gray-100 border border-gray-200 text-pink-600' : 'text-gray-700 hover:bg-pink-50 hover:text-pink-600' }}">Inicio</a>
+        <a href="{{ route('cash-register.index') }}" class="block px-3 py-2 rounded-lg text-base font-semibold {{ request()->routeIs('cash-register.*') ? 'bg-gray-100 border border-gray-200 text-pink-600' : 'text-gray-700 hover:bg-pink-50 hover:text-pink-600' }}">Caja</a>
         <a href="{{ route('products.index') }}" class="block px-3 py-2 rounded-lg text-base font-semibold {{ request()->routeIs('products.*') ? 'bg-gray-100 border border-gray-200 text-pink-600' : 'text-gray-700 hover:bg-pink-50 hover:text-pink-600' }}">Productos</a>
         <a href="{{ route('categories.index') }}" class="block px-3 py-2 rounded-lg text-base font-semibold {{ request()->routeIs('categories.*') ? 'bg-gray-100 border border-gray-200 text-pink-600' : 'text-gray-700 hover:bg-pink-50 hover:text-pink-600' }}">Categoria</a>
 
@@ -153,7 +159,7 @@
         <!-- VENTAS MÓVIL -->
         <div class="pt-1">
             <p class="px-3 py-1 text-xs uppercase tracking-wide font-semibold text-gray-400">Ventas</p>
-            <a href="{{ route('sales.products.index') }}" class="block px-3 py-2 rounded-lg text-base font-semibold {{ request()->routeIs('sales.*') ? 'bg-gray-100 border border-gray-200 text-pink-600' : 'text-gray-700 hover:bg-pink-50 hover:text-pink-600' }}">Ventas de productos</a>
+            <a href="{{ route('sales.index') }}" class="block px-3 py-2 rounded-lg text-base font-semibold {{ request()->routeIs('sales.*') ? 'bg-gray-100 border border-gray-200 text-pink-600' : 'text-gray-700 hover:bg-pink-50 hover:text-pink-600' }}">Ventas de productos</a>
             <a href="{{ route('service-sales.index') }}" class="block px-3 py-2 rounded-lg text-base font-semibold {{ request()->routeIs('service-sales.*') ? 'bg-gray-100 border border-gray-200 text-pink-600' : 'text-gray-700 hover:bg-pink-50 hover:text-pink-600' }}">Ventas de servicios</a>
         </div>
 

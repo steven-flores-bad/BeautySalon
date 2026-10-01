@@ -8,6 +8,7 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ServiceCategoryController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\ServiceSaleController;
+use App\Http\Controllers\CashRegisterController;
 use Illuminate\Support\Facades\Route;
 
 // Ruta principal
@@ -26,9 +27,13 @@ Route::get('/reports/services', [ReportController::class, 'services'])->name('re
 Route::get('/reports/services/pdf', [ReportController::class, 'servicesPdf'])->name('reports.services.pdf');
 Route::get('/reports/employees/pdf', [ReportController::class, 'employeesPdf'])->name('reports.employees.pdf');
 
-// Ventas de Productos
-Route::get('/sales', [SaleController::class, 'productsIndex'])->name('sales.products.index');
-Route::resource('sales', SaleController::class)->only(['store', 'destroy']);
+// Ventas de Productos (index incluido: usa el método index() real del controlador)
+Route::resource('sales', SaleController::class)->only(['index', 'store', 'destroy']);
 
 // Ventas de Servicios
 Route::resource('service-sales', ServiceSaleController::class)->only(['index', 'store', 'destroy']);
+
+// Caja
+Route::get('/caja', [CashRegisterController::class, 'index'])->name('cash-register.index');
+Route::post('/caja/abrir', [CashRegisterController::class, 'open'])->name('cash-register.open');
+Route::post('/caja/cerrar', [CashRegisterController::class, 'close'])->name('cash-register.close');

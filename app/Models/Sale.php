@@ -17,6 +17,7 @@ class Sale extends Model
         'metodo_pago',
         'subtotal',
         'descuento',
+        'iva',
         'total',
         'estado',
         'notas',

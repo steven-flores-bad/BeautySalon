@@ -5,31 +5,29 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class ServiceSale extends Model
+class CashRegister extends Model
 {
     use HasFactory;
 
-    protected $table = 'service_sales';
+    protected $table = 'cash_registers';
 
     protected $fillable = [
         'user_id',
-        'cliente_nombre',
-        'metodo_pago',
-        'subtotal',
-        'descuento',
-        'iva',
-        'total',
+        'fecha',
+        'monto_apertura',
+        'monto_cierre_esperado',
+        'monto_cierre_real',
+        'diferencia',
         'estado',
         'notas',
+    ];
+
+    protected $casts = [
+        'fecha' => 'date',
     ];
 
     public function user()
     {
         return $this->belongsTo(User::class);
-    }
-
-    public function details()
-    {
-        return $this->hasMany(ServiceSaleDetail::class);
     }
 }
