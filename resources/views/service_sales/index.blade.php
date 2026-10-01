@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Ventas de Servicios - Salón de Belleza')
+@section('title', 'Ventas de Servicios - JulySalon')
 
 @section('body-data')
 serviceSaleForm()
@@ -30,10 +30,12 @@ serviceSaleForm()
         </div>
     @endif
 
+    @include('components.caja-cerrada-alert')
+
     <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
         <h1 class="text-2xl font-bold text-gray-900 w-full">Ventas de Servicios</h1>
 
-        <button @click="openModal()" class="w-full sm:w-auto bg-pink-600 hover:bg-pink-700 text-white font-medium px-5 py-2 rounded-lg shadow transition text-sm flex items-center justify-center gap-2 whitespace-nowrap">
+        <button @click="openModal()" @disabled(!$cajaAbierta) title="{{ $cajaAbierta ? '' : 'Abre la caja para poder vender' }}" class="disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto bg-pink-600 hover:bg-pink-700 text-white font-medium px-5 py-2 rounded-lg shadow transition text-sm flex items-center justify-center gap-2 whitespace-nowrap">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
             Nueva Venta
         </button>
@@ -100,7 +102,7 @@ serviceSaleForm()
                                         class="text-indigo-600 hover:text-indigo-900 font-medium text-xs bg-indigo-50 px-2.5 py-1 rounded-md transition">
                                     Ver
                                 </button>
-                                @if($venta->estado === 'completada')
+                                @if($venta->sePuedeCancelar())
                                     <form action="{{ route('service-sales.destroy', $venta->id) }}" method="POST" class="inline-block" @submit.prevent="$dispatch('confirm-action', { form: $el, type: 'cancel', title: 'Cancelar venta de servicios', question: '¿Estás seguro de cancelar la venta', name: '#{{ $venta->id }}', message: 'La venta quedará marcada como cancelada.', confirmText: 'Sí, cancelar venta' })">
                                         @csrf
                                         @method('DELETE')
@@ -108,6 +110,8 @@ serviceSaleForm()
                                             Cancelar
                                         </button>
                                     </form>
+                                @elseif($venta->estado === 'completada')
+                                    <span class="text-gray-400 text-xs px-2.5 py-1" title="La caja de esta venta ya fue cerrada">Caja cerrada</span>
                                 @endif
                             </td>
                         </tr>

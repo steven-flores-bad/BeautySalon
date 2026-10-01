@@ -14,7 +14,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'Salón de Belleza')</title>
+    <title>@yield('title', 'JulySalon')</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Alpine.js para modales, menús y formularios -->

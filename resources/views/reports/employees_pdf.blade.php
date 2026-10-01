@@ -3,30 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <style>
-        body { font-family: Helvetica, Arial, sans-serif; color: #333; font-size: 11px; }
-        h1 { color: #4f46e5; font-size: 20px; margin-bottom: 0; }
-        .subtitle { color: #999; font-size: 11px; margin-top: 2px; margin-bottom: 20px; }
+        body { font-family: Helvetica, Arial, sans-serif; color: #333; font-size: 13px; }
+        h1 { color: #4f46e5; font-size: 24px; margin-bottom: 0; }
+        .subtitle { color: #999; font-size: 13px; margin-top: 2px; margin-bottom: 20px; }
 
         .empleado-header { background: #eef2ff; padding: 8px 10px; margin-top: 18px; border-radius: 4px; }
-        .empleado-header .nombre { font-size: 13px; font-weight: bold; color: #3730a3; }
-        .empleado-header .resumen { font-size: 10px; color: #6366f1; margin-left: 10px; }
+        .empleado-header .nombre { font-size: 15px; font-weight: bold; color: #3730a3; }
+        .empleado-header .resumen { font-size: 12px; color: #6366f1; margin-left: 10px; }
 
         table.detalle { width: 100%; border-collapse: collapse; margin-top: 6px; margin-bottom: 4px; }
-        table.detalle th { background: #f3f4f6; text-transform: uppercase; font-size: 8px; text-align: left; padding: 6px; border-bottom: 1px solid #e5e7eb; }
-        table.detalle td { padding: 6px; border-bottom: 1px solid #f0f0f0; font-size: 10px; }
+        table.detalle th { background: #f3f4f6; text-transform: uppercase; font-size: 10px; text-align: left; padding: 6px; border-bottom: 1px solid #e5e7eb; }
+        table.detalle td { padding: 6px; border-bottom: 1px solid #f0f0f0; font-size: 12px; }
         table.detalle .num { text-align: right; }
         table.detalle .center { text-align: center; }
 
         .total-general { margin-top: 20px; padding: 10px; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 4px; text-align: right; }
-        .total-general .label { font-size: 9px; text-transform: uppercase; color: #999; }
-        .total-general .valor { font-size: 16px; font-weight: bold; color: #4f46e5; }
+        .total-general .label { font-size: 14px; text-transform: uppercase; color: #999; }
+        .total-general .valor { font-size: 26px; font-weight: bold; color: #4f46e5; }
 
-        .footer { margin-top: 25px; font-size: 9px; color: #aaa; text-align: center; }
+        .footer { margin-top: 25px; font-size: 11px; color: #aaa; text-align: center; }
     </style>
 </head>
 <body>
 
-    <h1>✨ BeautyControl — Reporte de Empleados</h1>
+    <h1>JulySalon — Reporte de Empleados</h1>
     <p class="subtitle">
         Comisiones por servicios atendidos —
         @if ($periodo === 'dia')
@@ -90,7 +90,7 @@
         </div>
     @endif
 
-    <p class="footer">BeautyControl — Reporte generado automáticamente por el sistema.</p>
+    <p class="footer">JulySalon — Reporte generado automáticamente por el sistema.</p>
 
 </body>
 </html>

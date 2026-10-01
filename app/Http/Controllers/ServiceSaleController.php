@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CashRegister;
 use App\Models\Employee;
 use App\Models\Service;
 use App\Models\ServiceSale;
@@ -19,7 +20,7 @@ class ServiceSaleController extends Controller
         $fechaFiltro = $request->input('fecha');
         $employeeFiltro = $request->input('employee_id');
 
-        $serviceSales = ServiceSale::with(['user', 'details.service', 'details.employee'])
+        $serviceSales = ServiceSale::with(['user', 'details.service', 'details.employee', 'cashRegister'])
                             ->withSum('details', 'cantidad')
                             ->when($search, function ($query, $search) {
                                 return $query->where('cliente_nombre', 'like', "%{$search}%")
@@ -41,7 +42,9 @@ class ServiceSaleController extends Controller
         $services = Service::with('category')->orderBy('nombre')->get();
         $employees = Employee::where('activo', true)->orderBy('nombre')->get();
 
-        return view('service_sales.index', compact('serviceSales', 'search', 'fechaFiltro', 'employeeFiltro', 'services', 'employees'));
+        $cajaAbierta = CashRegister::abiertaHoy();
+
+        return view('service_sales.index', compact('serviceSales', 'search', 'fechaFiltro', 'employeeFiltro', 'services', 'employees', 'cajaAbierta'));
     }
 
     /**
@@ -61,61 +64,73 @@ class ServiceSaleController extends Controller
             'servicios.*.comision_porcentaje' => 'required|numeric|min:0|max:100',
         ]);
 
-        $serviceSale = DB::transaction(function () use ($validated) {
-            $subtotal = 0;
-            $totalDescuento = 0;
-            $lineas = [];
+        try {
+            $serviceSale = DB::transaction(function () use ($validated) {
+                // Bloquea la caja para que no se cierre a mitad de la venta.
+                $caja = CashRegister::abiertaHoy(bloquear: true);
 
-            foreach ($validated['servicios'] as $item) {
-                $service = Service::findOrFail($item['service_id']);
-
-                $descuentoLinea = $item['descuento'] ?? 0;
-                $bruto = $service->precio * $item['cantidad'];
-
-                if ($descuentoLinea > $bruto) {
-                    throw new \Exception("El descuento de \"{$service->nombre}\" no puede ser mayor al subtotal de esa línea.");
+                if (!$caja) {
+                    throw new \Exception('Debes abrir la caja antes de registrar ventas.');
                 }
 
-                $subtotalLinea = $bruto - $descuentoLinea;
-                $comisionMonto = $subtotalLinea * ($item['comision_porcentaje'] / 100);
+                $subtotal = 0;
+                $totalDescuento = 0;
+                $lineas = [];
 
-                $subtotal += $bruto;
-                $totalDescuento += $descuentoLinea;
+                foreach ($validated['servicios'] as $item) {
+                    $service = Service::findOrFail($item['service_id']);
 
-                $lineas[] = [
-                    'service_id' => $service->id,
-                    'employee_id' => $item['employee_id'],
-                    'cantidad' => $item['cantidad'],
-                    'precio' => $service->precio,
-                    'descuento' => $descuentoLinea,
-                    'subtotal' => $subtotalLinea,
-                    'comision_porcentaje' => $item['comision_porcentaje'],
-                    'comision_monto' => $comisionMonto,
-                ];
-            }
+                    $descuentoLinea = $item['descuento'] ?? 0;
+                    $bruto = $service->precio * $item['cantidad'];
 
-            $base = max($subtotal - $totalDescuento, 0);
-            $iva = round($base * 0.13, 2);
-            $total = $base + $iva;
+                    if ($descuentoLinea > $bruto) {
+                        throw new \Exception("El descuento de \"{$service->nombre}\" no puede ser mayor al subtotal de esa línea.");
+                    }
 
-            $serviceSale = ServiceSale::create([
-                'user_id' => auth()->id(),
-                'cliente_nombre' => $validated['cliente_nombre'] ?? null,
-                'metodo_pago' => $validated['metodo_pago'],
-                'subtotal' => $subtotal,
-                'descuento' => $totalDescuento,
-                'iva' => $iva,
-                'total' => $total,
-                'estado' => 'completada',
-                'notas' => $validated['notas'] ?? null,
-            ]);
+                    $subtotalLinea = $bruto - $descuentoLinea;
+                    $comisionMonto = $subtotalLinea * ($item['comision_porcentaje'] / 100);
 
-            foreach ($lineas as $linea) {
-                $serviceSale->details()->create($linea);
-            }
+                    $subtotal += $bruto;
+                    $totalDescuento += $descuentoLinea;
 
-            return $serviceSale;
-        });
+                    $lineas[] = [
+                        'service_id' => $service->id,
+                        'employee_id' => $item['employee_id'],
+                        'cantidad' => $item['cantidad'],
+                        'precio' => $service->precio,
+                        'descuento' => $descuentoLinea,
+                        'subtotal' => $subtotalLinea,
+                        'comision_porcentaje' => $item['comision_porcentaje'],
+                        'comision_monto' => $comisionMonto,
+                    ];
+                }
+
+                $base = max($subtotal - $totalDescuento, 0);
+                $iva = round($base * 0.13, 2);
+                $total = $base + $iva;
+
+                $serviceSale = ServiceSale::create([
+                    'user_id' => auth()->id(),
+                    'cash_register_id' => $caja->id,
+                    'cliente_nombre' => $validated['cliente_nombre'] ?? null,
+                    'metodo_pago' => $validated['metodo_pago'],
+                    'subtotal' => $subtotal,
+                    'descuento' => $totalDescuento,
+                    'iva' => $iva,
+                    'total' => $total,
+                    'estado' => 'completada',
+                    'notas' => $validated['notas'] ?? null,
+                ]);
+
+                foreach ($lineas as $linea) {
+                    $serviceSale->details()->create($linea);
+                }
+
+                return $serviceSale;
+            });
+        } catch (\Exception $e) {
+            return redirect()->route('service-sales.index')->with('error', $e->getMessage());
+        }
 
         return redirect()->route('service-sales.index')
                          ->with('success', 'Venta de servicios #' . $serviceSale->id . ' registrada. Total: $' . number_format($serviceSale->total, 2));
@@ -123,14 +138,30 @@ class ServiceSaleController extends Controller
 
     /**
      * Cancelar una venta de servicios (no se borra, se conserva para reportes).
+     * Solo se permite mientras la caja de la venta siga abierta.
      */
     public function destroy(ServiceSale $serviceSale)
     {
-        if ($serviceSale->estado === 'cancelada') {
-            return redirect()->route('service-sales.index')->with('error', 'Esta venta ya estaba cancelada.');
-        }
+        try {
+            DB::transaction(function () use ($serviceSale) {
+                // Se releen venta y caja con bloqueo: evita cancelar dos veces
+                // y que la caja se cierre a mitad de la cancelación.
+                $venta = ServiceSale::lockForUpdate()->findOrFail($serviceSale->id);
+                $venta->setRelation('cashRegister', CashRegister::lockForUpdate()->find($venta->cash_register_id));
 
-        $serviceSale->update(['estado' => 'cancelada']);
+                if ($venta->estado === 'cancelada') {
+                    throw new \Exception('Esta venta ya estaba cancelada.');
+                }
+
+                if (!$venta->sePuedeCancelar()) {
+                    throw new \Exception('No se puede cancelar la venta de servicios #' . $venta->id . ' porque su caja ya fue cerrada.');
+                }
+
+                $venta->update(['estado' => 'cancelada']);
+            });
+        } catch (\Exception $e) {
+            return redirect()->route('service-sales.index')->with('error', $e->getMessage());
+        }
 
         return redirect()->route('service-sales.index')->with('success', 'Venta de servicios #' . $serviceSale->id . ' cancelada.');
     }

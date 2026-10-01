@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CashRegister;
 use App\Models\Product;
 use App\Models\Sale;
 use Illuminate\Http\Request;
@@ -16,7 +17,7 @@ class SaleController extends Controller
     {
         $search = $request->input('search');
 
-        $sales = Sale::with(['user', 'details.product'])
+        $sales = Sale::with(['user', 'details.product', 'cashRegister'])
                     ->withCount('details')
                     ->when($search, function ($query, $search) {
                         return $query->where('cliente_nombre', 'like', "%{$search}%")
@@ -30,7 +31,9 @@ class SaleController extends Controller
         // para armar el formulario de nueva venta en el frontend.
         $products = Product::with('category')->orderBy('producto')->get();
 
-        return view('sales.index', compact('sales', 'search', 'products'));
+        $cajaAbierta = CashRegister::abiertaHoy();
+
+        return view('sales.index', compact('sales', 'search', 'products', 'cajaAbierta'));
     }
 
     /**
@@ -50,6 +53,13 @@ class SaleController extends Controller
 
         try {
             $sale = DB::transaction(function () use ($validated) {
+                // Bloquea la caja para que no se cierre a mitad de la venta.
+                $caja = CashRegister::abiertaHoy(bloquear: true);
+
+                if (!$caja) {
+                    throw new \Exception('Debes abrir la caja antes de registrar ventas.');
+                }
+
                 $subtotal = 0;
                 $totalDescuento = 0;
                 $lineas = [];
@@ -90,6 +100,7 @@ class SaleController extends Controller
 
                 $sale = Sale::create([
                     'user_id' => auth()->id(),
+                    'cash_register_id' => $caja->id,
                     'cliente_nombre' => $validated['cliente_nombre'] ?? null,
                     'metodo_pago' => $validated['metodo_pago'],
                     'subtotal' => $subtotal,
@@ -125,20 +136,34 @@ class SaleController extends Controller
     /**
      * Cancelar una venta: NO se borra el registro (se conserva para reportes),
      * se marca como "cancelada" y se restaura el stock de cada producto.
+     * Solo se permite mientras la caja de la venta siga abierta.
      */
     public function destroy(Sale $sale)
     {
-        if ($sale->estado === 'cancelada') {
-            return redirect()->route('sales.index')->with('error', 'Esta venta ya estaba cancelada.');
+        try {
+            DB::transaction(function () use ($sale) {
+                // Se releen venta y caja con bloqueo: evita cancelar dos veces
+                // y que la caja se cierre a mitad de la cancelación.
+                $sale = Sale::lockForUpdate()->findOrFail($sale->id);
+                $sale->setRelation('cashRegister', CashRegister::lockForUpdate()->find($sale->cash_register_id));
+
+                if ($sale->estado === 'cancelada') {
+                    throw new \Exception('Esta venta ya estaba cancelada.');
+                }
+
+                if (!$sale->sePuedeCancelar()) {
+                    throw new \Exception('No se puede cancelar la venta #' . $sale->id . ' porque su caja ya fue cerrada.');
+                }
+
+                foreach ($sale->details as $detail) {
+                    $detail->product->increment('existencia', $detail->cantidad);
+                }
+
+                $sale->update(['estado' => 'cancelada']);
+            });
+        } catch (\Exception $e) {
+            return redirect()->route('sales.index')->with('error', $e->getMessage());
         }
-
-        DB::transaction(function () use ($sale) {
-            foreach ($sale->details as $detail) {
-                $detail->product->increment('existencia', $detail->cantidad);
-            }
-
-            $sale->update(['estado' => 'cancelada']);
-        });
 
         return redirect()->route('sales.index')->with('success', 'Venta #' . $sale->id . ' cancelada y stock restaurado.');
     }

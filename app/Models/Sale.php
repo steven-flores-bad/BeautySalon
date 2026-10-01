@@ -13,6 +13,7 @@ class Sale extends Model
 
     protected $fillable = [
         'user_id',
+        'cash_register_id',
         'cliente_nombre',
         'metodo_pago',
         'subtotal',
@@ -32,10 +33,28 @@ class Sale extends Model
     }
 
     /**
+     * Caja en la que se registró la venta.
+     */
+    public function cashRegister()
+    {
+        return $this->belongsTo(CashRegister::class);
+    }
+
+    /**
      * Líneas de detalle: los productos incluidos en esta venta.
      */
     public function details()
     {
         return $this->hasMany(SaleDetail::class);
+    }
+
+    /**
+     * Solo se puede cancelar si está completada y su caja sigue abierta
+     * (o si es una venta antigua sin caja asignada).
+     */
+    public function sePuedeCancelar(): bool
+    {
+        return $this->estado === 'completada'
+            && (!$this->cashRegister || $this->cashRegister->estaAbierta());
     }
 }

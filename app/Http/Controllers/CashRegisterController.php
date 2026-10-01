@@ -3,10 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\CashRegister;
-use App\Models\Sale;
-use App\Models\ServiceSale;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class CashRegisterController extends Controller
 {
@@ -21,8 +20,10 @@ class CashRegisterController extends Controller
 
         $caja = CashRegister::whereDate('fecha', $hoy)->first();
 
-        $ventasEfectivoHoy = $this->ventasEfectivoDelDia($hoy);
-        $ventasTarjetaTransferenciaHoy = $this->ventasNoEfectivoDelDia($hoy);
+        // Con la caja abierta los totales se calculan en vivo. Con la caja
+        // cerrada se usan los valores guardados al cerrar (ver la vista).
+        $ventasEfectivoHoy = $caja ? $caja->totalVentas(['efectivo']) : 0;
+        $ventasTarjetaTransferenciaHoy = $caja ? $caja->totalVentas(['tarjeta', 'transferencia']) : 0;
 
         $efectivoEsperado = $caja ? $caja->monto_apertura + $ventasEfectivoHoy : null;
 
@@ -65,39 +66,49 @@ class CashRegisterController extends Controller
 
     /**
      * Cerrar la caja del día: compara el efectivo contado contra el esperado
-     * (apertura + ventas en efectivo del día) y guarda la diferencia.
+     * (apertura + ventas en efectivo de esta caja) y guarda la diferencia.
+     * Después del cierre ya no se puede vender ni cancelar ventas de esta caja.
      */
     public function close(Request $request)
     {
-        $hoy = Carbon::today();
+        $validated = $request->validate([
+            'monto_cierre_real' => 'required|numeric|min:0',
+            'notas_cierre' => 'nullable|string',
+        ]);
 
-        $caja = CashRegister::whereDate('fecha', $hoy)->where('estado', 'abierta')->first();
+        // Se bloquea la fila de la caja para que ninguna venta se registre
+        // o cancele mientras se calcula el cierre.
+        $caja = DB::transaction(function () use ($validated) {
+            $caja = CashRegister::abiertaHoy(bloquear: true);
+
+            if (!$caja) {
+                return null;
+            }
+
+            $efectivoEsperado = $caja->monto_apertura + $caja->totalVentas(['efectivo']);
+
+            $notas = $caja->notas;
+            if (!empty($validated['notas_cierre'])) {
+                $notas = trim(($notas ? $notas . "\n" : '') . '[Cierre] ' . $validated['notas_cierre']);
+            }
+
+            $caja->update([
+                'monto_cierre_esperado' => $efectivoEsperado,
+                'monto_cierre_real' => $validated['monto_cierre_real'],
+                'diferencia' => $validated['monto_cierre_real'] - $efectivoEsperado,
+                'estado' => 'cerrada',
+                'notas' => $notas,
+            ]);
+
+            return $caja;
+        });
 
         if (!$caja) {
             return redirect()->route('cash-register.index')
                              ->with('error', 'No hay una caja abierta para cerrar hoy.');
         }
 
-        $validated = $request->validate([
-            'monto_cierre_real' => 'required|numeric|min:0',
-            'notas_cierre' => 'nullable|string',
-        ]);
-
-        $efectivoEsperado = $caja->monto_apertura + $this->ventasEfectivoDelDia($hoy);
-        $diferencia = $validated['monto_cierre_real'] - $efectivoEsperado;
-
-        $notas = $caja->notas;
-        if (!empty($validated['notas_cierre'])) {
-            $notas = trim(($notas ? $notas . "\n" : '') . '[Cierre] ' . $validated['notas_cierre']);
-        }
-
-        $caja->update([
-            'monto_cierre_esperado' => $efectivoEsperado,
-            'monto_cierre_real' => $validated['monto_cierre_real'],
-            'diferencia' => $diferencia,
-            'estado' => 'cerrada',
-            'notas' => $notas,
-        ]);
+        $diferencia = $caja->diferencia;
 
         $mensaje = 'Caja cerrada. ';
         if (abs($diferencia) < 0.01) {
@@ -109,44 +120,5 @@ class CashRegisterController extends Controller
         }
 
         return redirect()->route('cash-register.index')->with('success', $mensaje);
-    }
-
-    /**
-     * Suma de ventas (productos + servicios) pagadas en EFECTIVO en el día dado.
-     * Es lo único que afecta el efectivo físico dentro de la caja.
-     */
-    private function ventasEfectivoDelDia(Carbon $fecha): float
-    {
-        $productos = Sale::whereDate('created_at', $fecha)
-                        ->where('estado', 'completada')
-                        ->where('metodo_pago', 'efectivo')
-                        ->sum('total');
-
-        $servicios = ServiceSale::whereDate('created_at', $fecha)
-                        ->where('estado', 'completada')
-                        ->where('metodo_pago', 'efectivo')
-                        ->sum('total');
-
-        return $productos + $servicios;
-    }
-
-    /**
-     * Suma de ventas pagadas con tarjeta o transferencia (informativo: ese
-     * dinero no entra físicamente a la caja, pero sí forma parte del total
-     * del día para efectos de reportes).
-     */
-    private function ventasNoEfectivoDelDia(Carbon $fecha): float
-    {
-        $productos = Sale::whereDate('created_at', $fecha)
-                        ->where('estado', 'completada')
-                        ->whereIn('metodo_pago', ['tarjeta', 'transferencia'])
-                        ->sum('total');
-
-        $servicios = ServiceSale::whereDate('created_at', $fecha)
-                        ->where('estado', 'completada')
-                        ->whereIn('metodo_pago', ['tarjeta', 'transferencia'])
-                        ->sum('total');
-
-        return $productos + $servicios;
     }
 }

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Caja - Salón de Belleza')
+@section('title', 'Caja - JulySalon')
 @section('max-width', 'max-w-3xl')
 
 @section('body-data')
@@ -94,7 +94,8 @@
             </div>
             <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
                 <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-1">Ventas en Efectivo</p>
-                <p class="text-xl font-bold text-emerald-600">+${{ number_format($ventasEfectivoHoy, 2) }}</p>
+                {{-- Valor fijo del cierre: esperado guardado menos la apertura --}}
+                <p class="text-xl font-bold text-emerald-600">+${{ number_format($caja->monto_cierre_esperado - $caja->monto_apertura, 2) }}</p>
             </div>
             <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
                 <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-1">Efectivo Esperado</p>
@@ -131,7 +132,7 @@
             </div>
         @endif
 
-        <p class="text-xs text-gray-400 text-center mt-6">La caja de hoy ya fue cerrada. Mañana podrás abrir una nueva.</p>
+        <p class="text-xs text-gray-400 text-center mt-6">La caja de hoy ya fue cerrada: no se pueden registrar ni cancelar ventas hasta abrir una nueva mañana.</p>
     @endif
 @endsection
 

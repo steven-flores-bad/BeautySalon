@@ -3,35 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <style>
-        body { font-family: Helvetica, Arial, sans-serif; color: #333; font-size: 11px; }
+        @page { margin: 30px 40px; }
+        body { font-family: Helvetica, Arial, sans-serif; color: #333; font-size: 13px; }
         h1 { color: #db2777; font-size: 20px; margin-bottom: 0; }
-        .subtitle { color: #999; font-size: 11px; margin-top: 2px; margin-bottom: 20px; }
+        .subtitle { color: #999; font-size: 13px; margin-top: 2px; margin-bottom: 20px; }
 
         .resumen { width: 100%; margin-bottom: 15px; }
-        .resumen td { width: 25%; padding: 10px; border: 1px solid #e5e7eb; }
-        .resumen .label { font-size: 9px; text-transform: uppercase; color: #999; display: block; margin-bottom: 4px; }
-        .resumen .valor { font-size: 16px; font-weight: bold; color: #333; }
+        .resumen td { width: 25%; padding: 12px 14px; border: 1px solid #e5e7eb; }
+        .resumen .label { font-size: 13px; text-transform: uppercase; color: #999; display: block; margin-bottom: 4px; }
+        .resumen .valor { font-size: 26px; font-weight: bold; color: #333; }
         .resumen .valor.total { color: #db2777; }
         .resumen .valor.comision { color: #4f46e5; }
 
         table.detalle { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        table.detalle th { background: #f3f4f6; text-transform: uppercase; font-size: 8px; text-align: left; padding: 6px; border-bottom: 1px solid #e5e7eb; }
-        table.detalle td { padding: 6px; border-bottom: 1px solid #f0f0f0; font-size: 10px; }
+        table.detalle th { background: #f3f4f6; text-transform: uppercase; font-size: 12px; text-align: left; padding: 8px 4px; border-bottom: 1px solid #e5e7eb; }
+        table.detalle td { padding: 5px 4px; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
         table.detalle .num { text-align: right; }
         table.detalle .center { text-align: center; }
-        table.detalle tfoot td { font-weight: bold; border-top: 2px solid #333; }
+        table.totales { width: 100%; border-collapse: collapse; border-top: 2px solid #333; background: #f9fafb; }
+        table.totales td { padding: 12px 10px; text-align: right; }
+        table.totales .titulo { text-align: left; font-size: 18px; font-weight: bold; color: #333; }
+        table.totales .t-label { display: block; font-size: 11px; text-transform: uppercase; color: #999; }
+        table.totales .t-valor { font-size: 20px; font-weight: bold; }
 
-        .metodos { margin-top: 10px; margin-bottom: 15px; }
-        .metodos span { display: inline-block; margin-right: 20px; }
-        .metodos .m-label { font-size: 9px; text-transform: capitalize; color: #999; display: block; }
-        .metodos .m-valor { font-size: 12px; font-weight: bold; }
+        table.metodos { width: 100%; margin-bottom: 15px; }
+        table.metodos td { width: 33%; padding: 10px 12px; border: 1px solid #e5e7eb; background: #f9fafb; }
+        table.metodos .m-label { display: block; font-size: 13px; text-transform: capitalize; color: #666; font-weight: bold; margin-bottom: 4px; }
+        table.metodos .m-valor { display: block; font-size: 20px; font-weight: bold; color: #333; }
+        table.metodos .m-cant { display: block; font-size: 12px; color: #999; margin-top: 2px; }
 
-        .footer { margin-top: 25px; font-size: 9px; color: #aaa; text-align: center; }
+        .footer { margin-top: 25px; font-size: 11px; color: #aaa; text-align: center; }
     </style>
 </head>
 <body>
 
-    <h1>✨ BeautyControl — Reporte de Servicios</h1>
+    <h1>JulySalon — Reporte de Servicios</h1>
     <p class="subtitle">
         @if ($periodo === 'dia')
             {{ $inicio->translatedFormat('l, d \d\e F \d\e Y') }}
@@ -65,57 +71,74 @@
     <table class="resumen" style="margin-top:10px;">
         <tr>
             <td>
+                <span class="label">{{ $periodo === 'dia' ? 'Caja iniciada con' : 'Total de aperturas de caja' }}</span>
+                @if($cajasDelPeriodo->isEmpty())
+                    <span style="font-size:15px; color:#999;">No se abrió caja en este período.</span>
+                @else
+                    <span class="valor" style="font-size:21px;">${{ number_format($totalApertura, 2) }}</span>
+                    <span style="display:block; font-size:12px; color:#999; margin-top:2px;">
+                        @if($periodo === 'dia')
+                            Caja {{ $cajasDelPeriodo->first()->estado }}@if($cajasDelPeriodo->first()->estado === 'cerrada') — contado al cierre: ${{ number_format($cajasDelPeriodo->first()->monto_cierre_real, 2) }}@endif
+                        @else
+                            {{ $cajasDelPeriodo->count() }} {{ $cajasDelPeriodo->count() === 1 ? 'día con caja' : 'días con caja' }}
+                        @endif
+                    </span>
+                @endif
+            </td>
+            <td>
                 <span class="label">Subtotal (sin IVA)</span>
-                <span class="valor" style="font-size:14px;">${{ number_format($totalSubtotal, 2) }}</span>
+                <span class="valor" style="font-size:21px;">${{ number_format($totalSubtotal, 2) }}</span>
             </td>
             @if($totalDescuentos > 0)
                 <td>
                     <span class="label">Descuentos Aplicados</span>
-                    <span class="valor" style="font-size:14px; color:#dc2626;">-${{ number_format($totalDescuentos, 2) }}</span>
+                    <span class="valor" style="font-size:21px; color:#dc2626;">-${{ number_format($totalDescuentos, 2) }}</span>
                 </td>
             @endif
             <td>
                 <span class="label">IVA (13%)</span>
-                <span class="valor" style="font-size:14px; color:#4f46e5;">+${{ number_format($totalIva, 2) }}</span>
+                <span class="valor" style="font-size:21px; color:#4f46e5;">+${{ number_format($totalIva, 2) }}</span>
             </td>
             <td>
                 <span class="label">Total con IVA</span>
-                <span class="valor total" style="font-size:14px;">${{ number_format($totalPeriodo, 2) }}</span>
+                <span class="valor total" style="font-size:21px;">${{ number_format($totalPeriodo, 2) }}</span>
             </td>
         </tr>
     </table>
 
     @if($porMetodoPago->isNotEmpty())
-        <div class="metodos">
-            @foreach (['efectivo', 'tarjeta', 'transferencia'] as $metodo)
-                <span>
-                    <span class="m-label">{{ $metodo }}</span>
-                    <span class="m-valor">${{ number_format(data_get($porMetodoPago, "$metodo.monto", 0), 2) }}</span>
-                    <span style="display:block; font-size:8px; color:#999;">{{ data_get($porMetodoPago, "$metodo.cantidad", 0) }} {{ (data_get($porMetodoPago, "$metodo.cantidad", 0)) === 1 ? 'venta' : 'ventas' }}</span>
-                </span>
-            @endforeach
-        </div>
+        <table class="metodos">
+            <tr>
+                @foreach (['efectivo', 'tarjeta', 'transferencia'] as $metodo)
+                    <td>
+                        <span class="m-label">{{ $metodo }}</span>
+                        <span class="m-valor">${{ number_format(data_get($porMetodoPago, "$metodo.monto", 0), 2) }}</span>
+                        <span class="m-cant">{{ data_get($porMetodoPago, "$metodo.cantidad", 0) }} {{ (data_get($porMetodoPago, "$metodo.cantidad", 0)) === 1 ? 'venta' : 'ventas' }}</span>
+                    </td>
+                @endforeach
+            </tr>
+        </table>
     @endif
 
     <table class="detalle">
         <thead>
             <tr>
-                <th>Servicio</th>
-                <th>Categoría</th>
-                <th>Atendió</th>
-                <th class="center">Cant.</th>
-                <th class="num">Precio</th>
-                <th class="num">Descuento</th>
-                <th class="num">Subtotal</th>
-                <th>Pago</th>
-                <th class="num">IVA</th>
-                <th class="num">Comisión</th>
+                <th style="width:22%;">Servicio</th>
+                <th style="width:17%;">Categoría</th>
+                <th style="width:9%;">Atendió</th>
+                <th class="center" style="width:5%;">Cant.</th>
+                <th class="num" style="width:8%;">Precio</th>
+                <th class="num" style="width:7%;">Desc.</th>
+                <th class="num" style="width:9%;">Subtotal</th>
+                <th style="width:9%;">Pago</th>
+                <th class="num" style="width:6%;">IVA</th>
+                <th class="num" style="width:8%;">Comisión</th>
             </tr>
         </thead>
         <tbody>
             @forelse ($serviciosVendidos as $fechaVenta => $detallesDelDia)
                 <tr style="background:#f3f4f6;">
-                    <td colspan="10" style="font-weight:bold; text-transform:uppercase; font-size:8px; color:#666;">
+                    <td colspan="10" style="font-weight:bold; text-transform:uppercase; font-size:12px; color:#666;">
                         {{ \Carbon\Carbon::parse($fechaVenta)->translatedFormat('l, d \d\e F') }}
                     </td>
                 </tr>
@@ -145,20 +168,30 @@
                 </tr>
             @endforelse
         </tbody>
-        @if($serviciosVendidos->isNotEmpty())
-            <tfoot>
-                <tr>
-                    <td colspan="6" class="num">Totales del período:</td>
-                    <td class="num">${{ number_format($totalPeriodo, 2) }}</td>
-                    <td></td>
-                    <td class="num">${{ number_format($totalIva, 2) }}</td>
-                    <td class="num">${{ number_format($totalComisiones, 2) }}</td>
-                </tr>
-            </tfoot>
-        @endif
     </table>
 
-    <p class="footer">BeautyControl — Reporte generado automáticamente por el sistema.</p>
+    @if($serviciosVendidos->isNotEmpty())
+        <!-- Totales en recuadro aparte: en letra grande sin ensanchar las columnas -->
+        <table class="totales">
+            <tr>
+                <td class="titulo">Totales del período</td>
+                <td>
+                    <span class="t-label">Total</span>
+                    <span class="t-valor" style="color:#db2777;">${{ number_format($totalPeriodo, 2) }}</span>
+                </td>
+                <td>
+                    <span class="t-label">IVA</span>
+                    <span class="t-valor" style="color:#4f46e5;">${{ number_format($totalIva, 2) }}</span>
+                </td>
+                <td>
+                    <span class="t-label">Comisiones</span>
+                    <span class="t-valor" style="color:#4f46e5;">${{ number_format($totalComisiones, 2) }}</span>
+                </td>
+            </tr>
+        </table>
+    @endif
+
+    <p class="footer">JulySalon — Reporte generado automáticamente por el sistema.</p>
 
 </body>
 </html>

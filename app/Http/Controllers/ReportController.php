@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\CashRegister;
 use App\Models\Sale;
 use App\Models\SaleDetail;
 use App\Models\ServiceSale;
@@ -284,6 +285,11 @@ class ReportController extends Controller
             ];
         });
 
+        // Cajas abiertas en el período: con cuánto se inició cada una.
+        $cajasDelPeriodo = CashRegister::whereBetween('fecha', [$inicio->toDateString(), $fin->toDateString()])
+                                ->orderBy('fecha')
+                                ->get();
+
         return [
             'periodo' => $periodo,
             'fecha' => $fecha,
@@ -291,6 +297,8 @@ class ReportController extends Controller
             'fin' => $fin,
             'fechaAnterior' => $fechaAnterior,
             'fechaSiguiente' => $fechaSiguiente,
+            'cajasDelPeriodo' => $cajasDelPeriodo,
+            'totalApertura' => $cajasDelPeriodo->sum('monto_apertura'),
             'totalPeriodo' => $totalPeriodo,
             'totalSubtotal' => $totalSubtotal,
             'totalDescuentos' => $totalDescuentos,
