@@ -22,6 +22,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'activo',
     ];
 
     /**
@@ -44,6 +45,19 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'activo' => 'boolean',
         ];
+    }
+
+    /**
+     * Iniciales para el avatar del menú (ej. "María López" → "ML").
+     */
+    public function iniciales(): string
+    {
+        return collect(preg_split('/\s+/', trim($this->name)))
+            ->filter()
+            ->take(2)
+            ->map(fn ($parte) => mb_strtoupper(mb_substr($parte, 0, 1)))
+            ->implode('');
     }
 }

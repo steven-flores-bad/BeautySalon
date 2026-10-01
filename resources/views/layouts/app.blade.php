@@ -43,6 +43,8 @@
 
     @include('components.confirm-modal')
 
+    @include('components.session-timeout')
+
     @stack('scripts')
 </body>
 </html>

@@ -78,9 +78,9 @@
                         </div>
                     </div>
 
-                    <a href="#" class="px-3 py-2 rounded-lg text-sm font-semibold text-gray-700 hover:text-pink-600 hover:bg-pink-50 transition">
+                    <!-- <a href="#" class="px-3 py-2 rounded-lg text-sm font-semibold text-gray-700 hover:text-pink-600 hover:bg-pink-50 transition">
                         Gastos
-                    </a>
+                    </a> -->
 
                     <!-- REPORTES CON DROPDOWN -->
                     <div class="relative" @click.away="reportsDropdown = false">
@@ -111,17 +111,21 @@
                 <div class="relative" @click.away="profileDropdown = false">
                     <button @click="profileDropdown = !profileDropdown" class="flex items-center space-x-3 focus:outline-none bg-white hover:bg-gray-100 p-1.5 rounded-full transition border border-gray-200 shadow-sm">
                         <div class="w-8 h-8 rounded-full bg-pink-600 text-white flex items-center justify-center font-bold text-xs">
-                            AD
+                            {{ auth()->user()->iniciales() }}
                         </div>
-                        <span class="text-sm font-medium text-gray-700 pr-2">Administración</span>
+                        <span class="text-sm font-medium text-gray-700 pr-2 max-w-[10rem] truncate">{{ auth()->user()->name }}</span>
                         <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                     </button>
 
                     <!-- Dropdown de perfil -->
-                    <div x-show="profileDropdown" x-cloak class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50">
-                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Configuración</a>
+                    <div x-show="profileDropdown" x-cloak class="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50">
+                        <div class="px-4 py-2 border-b border-gray-100">
+                            <p class="text-sm font-semibold text-gray-800 truncate">{{ auth()->user()->name }}</p>
+                            <p class="text-xs text-gray-400 truncate">{{ auth()->user()->email }}</p>
+                        </div>
+                        <a href="{{ route('users.index') }}" class="block px-4 py-2 text-sm {{ request()->routeIs('users.*') ? 'text-pink-600 bg-pink-50 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">Usuarios</a>
                         <div class="border-t border-gray-100 my-1"></div>
-                        <form action="#" method="POST">
+                        <form action="{{ route('logout') }}" method="POST">
                             @csrf
                             <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">Cerrar Sesión</button>
                         </form>
@@ -173,7 +177,12 @@
         </div>
 
         <div class="border-t border-gray-200 pt-3 mt-3">
-            <a href="#" class="block px-3 py-2 rounded-lg text-base font-medium text-red-600 hover:bg-red-50">Cerrar Sesión</a>
+            <p class="px-3 pb-2 text-sm text-gray-500">Sesión de <span class="font-semibold text-gray-700">{{ auth()->user()->name }}</span></p>
+            <a href="{{ route('users.index') }}" class="block px-3 py-2 rounded-lg text-base font-semibold {{ request()->routeIs('users.*') ? 'bg-gray-100 border border-gray-200 text-pink-600' : 'text-gray-700 hover:bg-pink-50 hover:text-pink-600' }}">Usuarios</a>
+            <form action="{{ route('logout') }}" method="POST">
+                @csrf
+                <button type="submit" class="w-full text-left px-3 py-2 rounded-lg text-base font-medium text-red-600 hover:bg-red-50">Cerrar Sesión</button>
+            </form>
         </div>
     </div>
 </nav>
