@@ -52,6 +52,7 @@ Route::middleware(['auth', 'activo'])->group(function () {
     // Caja
     Route::get('/caja', [CashRegisterController::class, 'index'])->name('cash-register.index');
     Route::post('/caja/abrir', [CashRegisterController::class, 'open'])->name('cash-register.open');
+    Route::put('/caja/apertura', [CashRegisterController::class, 'update'])->name('cash-register.update');
     Route::post('/caja/cerrar', [CashRegisterController::class, 'close'])->name('cash-register.close');
 
     // Usuarios del sistema

@@ -4,7 +4,7 @@
 @section('max-width', 'max-w-3xl')
 
 @section('body-data')
-{ openCloseModal: false }
+{ openCloseModal: false, openEditModal: {{ $errors->has('monto_apertura') && $caja ? 'true' : 'false' }} }
 @endsection
 
 @section('content')
@@ -54,7 +54,13 @@
         <!-- CAJA ABIERTA: totales en vivo + botón de cierre -->
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
             <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-                <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-1">Apertura</p>
+                <div class="flex items-start justify-between gap-2 mb-1">
+                    <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold">Apertura</p>
+                    <button type="button" @click="openEditModal = true"
+                            class="text-indigo-600 hover:text-indigo-900 font-medium text-xs bg-indigo-50 px-2 py-0.5 rounded-md transition">
+                        Editar
+                    </button>
+                </div>
                 <p class="text-2xl font-bold text-gray-800">${{ number_format($caja->monto_apertura, 2) }}</p>
             </div>
             <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
@@ -72,6 +78,13 @@
                 <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-1">Ventas con Tarjeta / Transferencia Hoy</p>
                 <p class="text-lg font-bold text-gray-600">${{ number_format($ventasTarjetaTransferenciaHoy, 2) }}</p>
                 <p class="text-xs text-gray-400 mt-1">Este dinero no entra físicamente a la caja, por eso no se incluye en el "Efectivo Esperado".</p>
+            </div>
+        @endif
+
+        @if($caja->notas)
+            <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5 mb-6">
+                <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-1">Notas</p>
+                <p class="text-sm text-gray-600 whitespace-pre-line">{{ $caja->notas }}</p>
             </div>
         @endif
 
@@ -138,6 +151,33 @@
 
 @section('modals')
     @if ($caja && $caja->estado === 'abierta')
+        <!-- MODAL EDITAR APERTURA -->
+        <div x-show="openEditModal" class="fixed inset-0 z-50 overflow-y-auto bg-black/50 flex items-center justify-center p-4" x-cloak>
+            <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl relative" @click.away="openEditModal = false">
+                <h3 class="text-lg font-bold text-gray-900 mb-1">Editar apertura</h3>
+                <p class="text-sm text-gray-500 mb-5">Corrige el monto con el que se abrió la caja. El cambio quedará anotado en las notas.</p>
+
+                <form action="{{ route('cash-register.update') }}" method="POST">
+                    @csrf
+                    @method('PUT')
+                    <div class="mb-4">
+                        <label class="block text-xs font-medium text-gray-700 mb-1">Monto de Apertura ($) *</label>
+                        <input type="number" step="0.01" min="0" name="monto_apertura" required
+                               value="{{ old('monto_apertura', number_format($caja->monto_apertura, 2, '.', '')) }}"
+                               class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-pink-500 focus:border-pink-500">
+                    </div>
+                    <div class="mb-5">
+                        <label class="block text-xs font-medium text-gray-700 mb-1">Notas (opcional)</label>
+                        <textarea name="notas" rows="3" class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-pink-500 focus:border-pink-500">{{ old('notas', $caja->notasEditables()) }}</textarea>
+                    </div>
+                    <div class="flex justify-end gap-3">
+                        <button type="button" @click="openEditModal = false" class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium">Cancelar</button>
+                        <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-lg text-sm font-medium shadow">Guardar cambios</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         <!-- MODAL CERRAR CAJA -->
         <div x-show="openCloseModal" class="fixed inset-0 z-50 overflow-y-auto bg-black/50 flex items-center justify-center p-4" x-cloak>
             <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl relative" @click.away="openCloseModal = false">

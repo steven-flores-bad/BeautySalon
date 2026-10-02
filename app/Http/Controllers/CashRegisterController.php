@@ -65,6 +65,53 @@ class CashRegisterController extends Controller
     }
 
     /**
+     * Corregir el monto de apertura (o las notas) si se escribió mal.
+     * Solo mientras la caja siga abierta: una caja cerrada ya tiene su
+     * arqueo calculado. El cambio queda anotado en las notas de la caja.
+     */
+    public function update(Request $request)
+    {
+        $validated = $request->validate([
+            'monto_apertura' => 'required|numeric|min:0',
+            'notas' => 'nullable|string',
+        ]);
+
+        $caja = DB::transaction(function () use ($validated) {
+            $caja = CashRegister::abiertaHoy(bloquear: true);
+
+            if (!$caja) {
+                return null;
+            }
+
+            $anterior = (float) $caja->monto_apertura;
+            $nuevo = (float) $validated['monto_apertura'];
+
+            // Los registros de correcciones anteriores se conservan siempre;
+            // el usuario solo edita sus propias notas.
+            $registros = $caja->registrosDeCorreccion();
+
+            if (abs($anterior - $nuevo) >= 0.01) {
+                $registros[] = '[Apertura corregida de $' . number_format($anterior, 2) . ' a $' . number_format($nuevo, 2)
+                             . ' por ' . (auth()->user()->name ?? 'usuario') . ', ' . now()->format('d/m/Y H:i') . ']';
+            }
+
+            $notas = trim(implode("\n", array_filter([trim($validated['notas'] ?? ''), ...$registros])));
+
+            $caja->update(['monto_apertura' => $nuevo, 'notas' => $notas !== '' ? $notas : null]);
+
+            return $caja;
+        });
+
+        if (!$caja) {
+            return redirect()->route('cash-register.index')
+                             ->with('error', 'Solo se puede editar la apertura mientras la caja está abierta.');
+        }
+
+        return redirect()->route('cash-register.index')
+                         ->with('success', 'Apertura actualizada a $' . number_format($caja->monto_apertura, 2) . '.');
+    }
+
+    /**
      * Cerrar la caja del día: compara el efectivo contado contra el esperado
      * (apertura + ventas en efectivo de esta caja) y guarda la diferencia.
      * Después del cierre ya no se puede vender ni cancelar ventas de esta caja.

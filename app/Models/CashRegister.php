@@ -52,6 +52,28 @@ class CashRegister extends Model
                      ->first();
     }
 
+    /**
+     * Líneas de las notas que registran correcciones de la apertura.
+     */
+    public function registrosDeCorreccion(): array
+    {
+        return array_values(array_filter(
+            preg_split('/\R/', (string) $this->notas),
+            fn ($linea) => str_starts_with(trim($linea), '[Apertura corregida')
+        ));
+    }
+
+    /**
+     * Notas escritas por el usuario, sin los registros de corrección.
+     */
+    public function notasEditables(): string
+    {
+        return trim(implode("\n", array_filter(
+            preg_split('/\R/', (string) $this->notas),
+            fn ($linea) => !str_starts_with(trim($linea), '[Apertura corregida')
+        )));
+    }
+
     public function estaAbierta(): bool
     {
         return $this->estado === 'abierta';
