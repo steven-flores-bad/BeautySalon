@@ -113,11 +113,11 @@
         @endif
     </div>
 
-    <!-- Desglose Subtotal / Descuento / IVA / Total -->
+    <!-- Desglose Subtotal / Descuento / Total -->
     <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5 mb-8">
         <div class="flex flex-wrap gap-6">
             <div>
-                <p class="text-xs text-gray-400 uppercase tracking-wide">Subtotal (sin IVA)</p>
+                <p class="text-xs text-gray-400 uppercase tracking-wide">Subtotal</p>
                 <p class="text-lg font-bold text-gray-800">${{ number_format($totalSubtotal, 2) }}</p>
             </div>
             @if($totalDescuentos > 0)
@@ -127,11 +127,7 @@
                 </div>
             @endif
             <div>
-                <p class="text-xs text-gray-400 uppercase tracking-wide">IVA (13%)</p>
-                <p class="text-lg font-bold text-indigo-600">+${{ number_format($totalIva, 2) }}</p>
-            </div>
-            <div>
-                <p class="text-xs text-gray-400 uppercase tracking-wide">Total con IVA</p>
+                <p class="text-xs text-gray-400 uppercase tracking-wide">Total</p>
                 <p class="text-lg font-bold text-pink-600">${{ number_format($totalPeriodo, 2) }}</p>
             </div>
         </div>
@@ -170,14 +166,13 @@
                         <th class="py-3 px-4 font-semibold text-right">Descuento</th>
                         <th class="py-3 px-4 font-semibold text-right">Subtotal</th>
                         <th class="py-3 px-4 font-semibold">Pago</th>
-                        <th class="py-3 px-4 font-semibold text-right">IVA</th>
                         <th class="py-3 px-4 font-semibold text-right">Comisión</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200 text-sm">
                     @forelse ($serviciosVendidos as $fechaVenta => $detallesDelDia)
                         <tr class="bg-gray-50">
-                            <td colspan="10" class="py-2 px-4 text-xs font-bold text-gray-500 uppercase tracking-wide">
+                            <td colspan="9" class="py-2 px-4 text-xs font-bold text-gray-500 uppercase tracking-wide">
                                 {{ \Carbon\Carbon::parse($fechaVenta)->translatedFormat('l, d \d\e F') }}
                             </td>
                         </tr>
@@ -199,13 +194,12 @@
                                 </td>
                                 <td class="py-3 px-4 text-right text-pink-600 font-semibold">${{ number_format($detalle->subtotal, 2) }}</td>
                                 <td class="py-3 px-4 text-gray-600 capitalize">{{ $detalle->venta_metodo_pago }}</td>
-                                <td class="py-3 px-4 text-right text-indigo-600" title="IVA de la venta #{{ $detalle->venta_id }} completa">${{ number_format($detalle->venta_iva, 2) }}</td>
                                 <td class="py-3 px-4 text-right text-indigo-600">${{ number_format($detalle->comision_monto, 2) }} <span class="text-xs text-gray-400">({{ number_format($detalle->comision_porcentaje, 0) }}%)</span></td>
                             </tr>
                         @endforeach
                     @empty
                         <tr>
-                            <td colspan="10" class="text-center py-10 text-gray-400">No se registraron servicios en este período.</td>
+                            <td colspan="9" class="text-center py-10 text-gray-400">No se registraron servicios en este período.</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -215,7 +209,6 @@
                             <td colspan="6" class="py-3 px-4 text-right text-gray-700">Totales del período:</td>
                             <td class="py-3 px-4 text-right text-pink-600">${{ number_format($totalPeriodo, 2) }}</td>
                             <td></td>
-                            <td class="py-3 px-4 text-right text-indigo-600">${{ number_format($totalIva, 2) }}</td>
                             <td class="py-3 px-4 text-right text-indigo-600">${{ number_format($totalComisiones, 2) }}</td>
                         </tr>
                     </tfoot>

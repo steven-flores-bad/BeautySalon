@@ -18,7 +18,6 @@ class ServiceSale extends Model
         'metodo_pago',
         'subtotal',
         'descuento',
-        'iva',
         'total',
         'estado',
         'notas',

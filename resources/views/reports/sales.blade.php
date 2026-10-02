@@ -64,11 +64,11 @@
         </div>
     </div>
 
-    <!-- Desglose Subtotal / Descuento / IVA / Total -->
+    <!-- Desglose Subtotal / Descuento / Total -->
     <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5 mb-8">
         <div class="flex flex-wrap gap-6">
             <div>
-                <p class="text-xs text-gray-400 uppercase tracking-wide">Subtotal (sin IVA)</p>
+                <p class="text-xs text-gray-400 uppercase tracking-wide">Subtotal</p>
                 <p class="text-lg font-bold text-gray-800">${{ number_format($totalSubtotal, 2) }}</p>
             </div>
             @if($totalDescuentos > 0)
@@ -78,11 +78,7 @@
                 </div>
             @endif
             <div>
-                <p class="text-xs text-gray-400 uppercase tracking-wide">IVA (13%)</p>
-                <p class="text-lg font-bold text-indigo-600">+${{ number_format($totalIva, 2) }}</p>
-            </div>
-            <div>
-                <p class="text-xs text-gray-400 uppercase tracking-wide">Total con IVA</p>
+                <p class="text-xs text-gray-400 uppercase tracking-wide">Total</p>
                 <p class="text-lg font-bold text-pink-600">${{ number_format($totalPeriodo, 2) }}</p>
             </div>
         </div>

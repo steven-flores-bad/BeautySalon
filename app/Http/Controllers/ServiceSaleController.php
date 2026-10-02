@@ -105,9 +105,7 @@ class ServiceSaleController extends Controller
                     ];
                 }
 
-                $base = max($subtotal - $totalDescuento, 0);
-                $iva = round($base * 0.13, 2);
-                $total = $base + $iva;
+                $total = max($subtotal - $totalDescuento, 0);
 
                 $serviceSale = ServiceSale::create([
                     'user_id' => auth()->id(),
@@ -116,7 +114,6 @@ class ServiceSaleController extends Controller
                     'metodo_pago' => $validated['metodo_pago'],
                     'subtotal' => $subtotal,
                     'descuento' => $totalDescuento,
-                    'iva' => $iva,
                     'total' => $total,
                     'estado' => 'completada',
                     'notas' => $validated['notas'] ?? null,

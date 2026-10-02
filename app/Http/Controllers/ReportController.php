@@ -155,9 +155,10 @@ class ReportController extends Controller
                                 ->get();
 
         $totalPeriodo = $ventasDelPeriodo->sum('total');
-        $totalSubtotal = $ventasDelPeriodo->sum('subtotal');
         $totalDescuentos = $ventasDelPeriodo->sum('descuento');
-        $totalIva = $ventasDelPeriodo->sum('iva');
+        // Subtotal = total + descuentos (así siempre cuadra con el total,
+        // incluso en ventas antiguas que tenían IVA).
+        $totalSubtotal = $totalPeriodo + $totalDescuentos;
         $totalVentas = $ventasDelPeriodo->count();
         $ticketPromedio = $totalVentas > 0 ? $totalPeriodo / $totalVentas : 0;
 
@@ -198,7 +199,6 @@ class ReportController extends Controller
             'totalPeriodo' => $totalPeriodo,
             'totalSubtotal' => $totalSubtotal,
             'totalDescuentos' => $totalDescuentos,
-            'totalIva' => $totalIva,
             'totalEfectivo' => $totalEfectivo,
             'totalVentas' => $totalVentas,
             'ticketPromedio' => $ticketPromedio,
@@ -229,9 +229,10 @@ class ReportController extends Controller
                                 ->get();
 
         $totalPeriodo = $ventasDelPeriodo->sum('total');
-        $totalSubtotal = $ventasDelPeriodo->sum('subtotal');
         $totalDescuentos = $ventasDelPeriodo->sum('descuento');
-        $totalIva = $ventasDelPeriodo->sum('iva');
+        // Subtotal = total + descuentos (así siempre cuadra con el total,
+        // incluso en ventas antiguas que tenían IVA).
+        $totalSubtotal = $totalPeriodo + $totalDescuentos;
         $totalVentas = $ventasDelPeriodo->count();
         $ticketPromedio = $totalVentas > 0 ? $totalPeriodo / $totalVentas : 0;
 
@@ -246,8 +247,7 @@ class ReportController extends Controller
                                 DB::raw('DATE(service_sales.created_at) as fecha_venta'),
                                 'service_sales.id as venta_id',
                                 'service_sales.cliente_nombre as cliente_nombre',
-                                'service_sales.metodo_pago as venta_metodo_pago',
-                                'service_sales.iva as venta_iva'
+                                'service_sales.metodo_pago as venta_metodo_pago'
                             )
                             ->join('service_sales', 'service_sales.id', '=', 'service_sale_details.service_sale_id')
                             ->where('service_sales.estado', 'completada')
@@ -302,7 +302,6 @@ class ReportController extends Controller
             'totalPeriodo' => $totalPeriodo,
             'totalSubtotal' => $totalSubtotal,
             'totalDescuentos' => $totalDescuentos,
-            'totalIva' => $totalIva,
             'totalEfectivo' => $totalEfectivo,
             'totalVentas' => $totalVentas,
             'ticketPromedio' => $ticketPromedio,

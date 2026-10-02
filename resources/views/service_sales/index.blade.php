@@ -232,9 +232,7 @@ serviceSaleForm()
                 <div class="flex justify-end mb-4">
                     <div class="text-right space-y-0.5">
                         <p class="text-xs text-gray-500">Subtotal: <span x-text="'$' + subtotal().toFixed(2)"></span></p>
-                        <p class="text-xs text-gray-500" x-show="totalDescuento() > 0">Descuento total: <span class="text-red-500" x-text="'-$' + totalDescuento().toFixed(2)"></span></p>
-                        <p class="text-xs text-gray-500">IVA (13%): <span x-text="'$' + iva().toFixed(2)"></span></p>
-                        <p class="text-xs text-gray-500">Comisiones totales: <span class="text-indigo-500" x-text="'$' + totalComision().toFixed(2)"></span></p>
+                        <p class="text-xs text-gray-500" x-show="totalDescuento() > 0">Descuento total: <span class="text-red-500" x-text="'-$' + totalDescuento().toFixed(2)"></span></p>                        <p class="text-xs text-gray-500">Comisiones totales: <span class="text-indigo-500" x-text="'$' + totalComision().toFixed(2)"></span></p>
                         <span class="text-lg font-bold text-pink-600">Total a cobrar: <span x-text="'$' + total().toFixed(2)"></span></span>
                     </div>
                 </div>
@@ -284,7 +282,6 @@ serviceSaleForm()
             <div class="text-right text-sm text-gray-600 space-y-1 mb-4">
                 <p>Subtotal: $<span x-text="parseFloat(selectedSale.subtotal || 0).toFixed(2)"></span></p>
                 <p>Descuento: $<span x-text="parseFloat(selectedSale.descuento || 0).toFixed(2)"></span></p>
-                <p>IVA (13%): $<span x-text="parseFloat(selectedSale.iva || 0).toFixed(2)"></span></p>
                 <p class="text-lg font-bold text-pink-600">Total: $<span x-text="parseFloat(selectedSale.total || 0).toFixed(2)"></span></p>
             </div>
 
@@ -362,16 +359,8 @@ serviceSaleForm()
                     }, 0);
                 },
 
-                base() {
-                    return this.items.reduce((sum, item) => sum + this.lineTotal(item), 0);
-                },
-
-                iva() {
-                    return this.base() * 0.13;
-                },
-
                 total() {
-                    return this.base() + this.iva();
+                    return this.items.reduce((sum, item) => sum + this.lineTotal(item), 0);
                 },
 
                 viewSale(sale) {

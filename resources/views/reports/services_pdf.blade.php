@@ -86,7 +86,7 @@
                 @endif
             </td>
             <td>
-                <span class="label">Subtotal (sin IVA)</span>
+                <span class="label">Subtotal</span>
                 <span class="valor" style="font-size:21px;">${{ number_format($totalSubtotal, 2) }}</span>
             </td>
             @if($totalDescuentos > 0)
@@ -96,11 +96,7 @@
                 </td>
             @endif
             <td>
-                <span class="label">IVA (13%)</span>
-                <span class="valor" style="font-size:21px; color:#4f46e5;">+${{ number_format($totalIva, 2) }}</span>
-            </td>
-            <td>
-                <span class="label">Total con IVA</span>
+                <span class="label">Total</span>
                 <span class="valor total" style="font-size:21px;">${{ number_format($totalPeriodo, 2) }}</span>
             </td>
         </tr>
@@ -123,22 +119,21 @@
     <table class="detalle">
         <thead>
             <tr>
-                <th style="width:22%;">Servicio</th>
-                <th style="width:17%;">Categoría</th>
+                <th style="width:25%;">Servicio</th>
+                <th style="width:18%;">Categoría</th>
                 <th style="width:9%;">Atendió</th>
                 <th class="center" style="width:5%;">Cant.</th>
                 <th class="num" style="width:8%;">Precio</th>
-                <th class="num" style="width:7%;">Desc.</th>
+                <th class="num" style="width:6%;">Desc.</th>
                 <th class="num" style="width:9%;">Subtotal</th>
-                <th style="width:9%;">Pago</th>
-                <th class="num" style="width:6%;">IVA</th>
-                <th class="num" style="width:8%;">Comisión</th>
+                <th style="width:10%;">Pago</th>
+                <th class="num" style="width:10%;">Comisión</th>
             </tr>
         </thead>
         <tbody>
             @forelse ($serviciosVendidos as $fechaVenta => $detallesDelDia)
                 <tr style="background:#f3f4f6;">
-                    <td colspan="10" style="font-weight:bold; text-transform:uppercase; font-size:12px; color:#666;">
+                    <td colspan="9" style="font-weight:bold; text-transform:uppercase; font-size:12px; color:#666;">
                         {{ \Carbon\Carbon::parse($fechaVenta)->translatedFormat('l, d \d\e F') }}
                     </td>
                 </tr>
@@ -158,13 +153,12 @@
                         </td>
                         <td class="num">${{ number_format($detalle->subtotal, 2) }}</td>
                         <td style="text-transform:capitalize;">{{ $detalle->venta_metodo_pago }}</td>
-                        <td class="num" style="color:#4f46e5;">${{ number_format($detalle->venta_iva, 2) }}</td>
                         <td class="num" style="color:#4f46e5;">${{ number_format($detalle->comision_monto, 2) }}</td>
                     </tr>
                 @endforeach
             @empty
                 <tr>
-                    <td colspan="10" style="text-align:center; color:#999; padding: 20px;">No se registraron servicios en este período.</td>
+                    <td colspan="9" style="text-align:center; color:#999; padding: 20px;">No se registraron servicios en este período.</td>
                 </tr>
             @endforelse
         </tbody>
@@ -178,10 +172,6 @@
                 <td>
                     <span class="t-label">Total</span>
                     <span class="t-valor" style="color:#db2777;">${{ number_format($totalPeriodo, 2) }}</span>
-                </td>
-                <td>
-                    <span class="t-label">IVA</span>
-                    <span class="t-valor" style="color:#4f46e5;">${{ number_format($totalIva, 2) }}</span>
                 </td>
                 <td>
                     <span class="t-label">Comisiones</span>

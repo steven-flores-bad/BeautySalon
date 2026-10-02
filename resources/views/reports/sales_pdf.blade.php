@@ -65,7 +65,7 @@
     <table class="resumen" style="margin-bottom:15px;">
         <tr>
             <td>
-                <span class="label">Subtotal (sin IVA)</span>
+                <span class="label">Subtotal</span>
                 <span class="valor" style="font-size:21px;">${{ number_format($totalSubtotal, 2) }}</span>
             </td>
             @if($totalDescuentos > 0)
@@ -75,11 +75,7 @@
                 </td>
             @endif
             <td>
-                <span class="label">IVA (13%)</span>
-                <span class="valor" style="font-size:21px; color:#4f46e5;">+${{ number_format($totalIva, 2) }}</span>
-            </td>
-            <td>
-                <span class="label">Total con IVA</span>
+                <span class="label">Total</span>
                 <span class="valor total" style="font-size:21px;">${{ number_format($totalPeriodo, 2) }}</span>
             </td>
         </tr>
