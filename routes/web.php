@@ -50,7 +50,7 @@ Route::middleware(['auth', 'activo'])->group(function () {
     Route::resource('sales', SaleController::class)->only(['index', 'store', 'destroy']);
 
     // Ventas de Servicios
-    Route::resource('service-sales', ServiceSaleController::class)->only(['index', 'store', 'destroy']);
+    Route::resource('service-sales', ServiceSaleController::class)->only(['index', 'store', 'update', 'destroy']);
 
     // Caja
     Route::get('/caja', [CashRegisterController::class, 'index'])->name('cash-register.index');

@@ -52,17 +52,7 @@ class ServiceSaleController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'cliente_nombre' => 'nullable|string|max:150',
-            'metodo_pago' => 'required|in:efectivo,tarjeta,transferencia',
-            'notas' => 'nullable|string',
-            'servicios' => 'required|array|min:1',
-            'servicios.*.service_id' => 'required|exists:services,id',
-            'servicios.*.employee_id' => 'required|exists:employees,id',
-            'servicios.*.cantidad' => 'required|integer|min:1',
-            'servicios.*.descuento' => 'nullable|numeric|min:0',
-            'servicios.*.comision_porcentaje' => 'required|numeric|min:0|max:100',
-        ]);
+        $validated = $this->validar($request);
 
         try {
             $serviceSale = DB::transaction(function () use ($validated) {
@@ -73,38 +63,7 @@ class ServiceSaleController extends Controller
                     throw new \Exception('Debes abrir la caja antes de registrar ventas.');
                 }
 
-                $subtotal = 0;
-                $totalDescuento = 0;
-                $lineas = [];
-
-                foreach ($validated['servicios'] as $item) {
-                    $service = Service::findOrFail($item['service_id']);
-
-                    $descuentoLinea = $item['descuento'] ?? 0;
-                    $bruto = $service->precio * $item['cantidad'];
-
-                    if ($descuentoLinea > $bruto) {
-                        throw new \Exception("El descuento de \"{$service->nombre}\" no puede ser mayor al subtotal de esa línea.");
-                    }
-
-                    $subtotalLinea = $bruto - $descuentoLinea;
-                    $comisionMonto = $subtotalLinea * ($item['comision_porcentaje'] / 100);
-
-                    $subtotal += $bruto;
-                    $totalDescuento += $descuentoLinea;
-
-                    $lineas[] = [
-                        'service_id' => $service->id,
-                        'employee_id' => $item['employee_id'],
-                        'cantidad' => $item['cantidad'],
-                        'precio' => $service->precio,
-                        'descuento' => $descuentoLinea,
-                        'subtotal' => $subtotalLinea,
-                        'comision_porcentaje' => $item['comision_porcentaje'],
-                        'comision_monto' => $comisionMonto,
-                    ];
-                }
-
+                [$lineas, $subtotal, $totalDescuento] = $this->armarLineas($validated['servicios']);
                 $total = max($subtotal - $totalDescuento, 0);
 
                 $serviceSale = ServiceSale::create([
@@ -131,6 +90,120 @@ class ServiceSaleController extends Controller
 
         return redirect()->route('service-sales.index')
                          ->with('success', 'Venta de servicios #' . $serviceSale->id . ' registrada. Total: $' . number_format($serviceSale->total, 2));
+    }
+
+    /**
+     * Corregir una venta de servicios (cliente, pago, servicios, empleada,
+     * cantidades, descuentos y comisiones). Solo ventas de la caja de hoy
+     * mientras está abierta. Como la caja y los reportes se calculan con
+     * las líneas guardadas, quitar un servicio resta su precio y comisión.
+     * Los servicios que ya estaban conservan el precio con que se vendieron.
+     */
+    public function update(Request $request, ServiceSale $serviceSale)
+    {
+        $validated = $this->validar($request);
+
+        try {
+            $venta = DB::transaction(function () use ($validated, $serviceSale) {
+                $venta = ServiceSale::with('details')->lockForUpdate()->findOrFail($serviceSale->id);
+                $venta->setRelation('cashRegister', CashRegister::lockForUpdate()->find($venta->cash_register_id));
+
+                if (!$venta->sePuedeCancelar()) {
+                    throw new \Exception('No se puede editar la venta de servicios #' . $venta->id . ' porque está cancelada, es de un día anterior o su caja ya fue cerrada.');
+                }
+
+                $preciosAnteriores = $venta->details->pluck('precio', 'service_id')->all();
+                [$lineas, $subtotal, $totalDescuento] = $this->armarLineas($validated['servicios'], $preciosAnteriores);
+                $total = max($subtotal - $totalDescuento, 0);
+
+                // Registro de la corrección (se conserva aunque se editen las notas).
+                $registros = $venta->registrosDeEdicion();
+                $registros[] = '[Editada el ' . now()->format('d/m/Y H:i') . ' por ' . (auth()->user()->name ?? 'usuario')
+                             . ': total $' . number_format($venta->total, 2) . ' → $' . number_format($total, 2) . ']';
+                $notas = trim(implode("\n", array_filter([trim($validated['notas'] ?? ''), ...$registros])));
+
+                $venta->details()->delete();
+                foreach ($lineas as $linea) {
+                    $venta->details()->create($linea);
+                }
+
+                $venta->update([
+                    'cliente_nombre' => $validated['cliente_nombre'] ?? null,
+                    'metodo_pago' => $validated['metodo_pago'],
+                    'subtotal' => $subtotal,
+                    'descuento' => $totalDescuento,
+                    'total' => $total,
+                    'notas' => $notas !== '' ? $notas : null,
+                ]);
+
+                return $venta;
+            });
+        } catch (\Exception $e) {
+            return redirect()->route('service-sales.index')->with('error', $e->getMessage());
+        }
+
+        return redirect()->route('service-sales.index')
+                         ->with('success', 'Venta de servicios #' . $venta->id . ' actualizada. Total: $' . number_format($venta->total, 2));
+    }
+
+    private function validar(Request $request): array
+    {
+        return $request->validate([
+            'cliente_nombre' => 'nullable|string|max:150',
+            'metodo_pago' => 'required|in:efectivo,tarjeta,transferencia',
+            'notas' => 'nullable|string',
+            'servicios' => 'required|array|min:1',
+            'servicios.*.service_id' => 'required|exists:services,id',
+            'servicios.*.employee_id' => 'required|exists:employees,id',
+            'servicios.*.cantidad' => 'required|integer|min:1',
+            'servicios.*.descuento' => 'nullable|numeric|min:0',
+            'servicios.*.comision_porcentaje' => 'required|numeric|min:0|max:100',
+        ]);
+    }
+
+    /**
+     * Arma las líneas de la venta y calcula subtotal y descuentos.
+     * $preciosAnteriores (service_id => precio): al editar, los servicios
+     * que ya estaban en la venta conservan el precio con que se vendieron.
+     *
+     * @return array{0: array, 1: float, 2: float}
+     */
+    private function armarLineas(array $servicios, array $preciosAnteriores = []): array
+    {
+        $subtotal = 0;
+        $totalDescuento = 0;
+        $lineas = [];
+
+        foreach ($servicios as $item) {
+            $service = Service::findOrFail($item['service_id']);
+            $precio = $preciosAnteriores[$service->id] ?? $service->precio;
+
+            $descuentoLinea = $item['descuento'] ?? 0;
+            $bruto = $precio * $item['cantidad'];
+
+            if ($descuentoLinea > $bruto) {
+                throw new \Exception("El descuento de \"{$service->nombre}\" no puede ser mayor al subtotal de esa línea.");
+            }
+
+            $subtotalLinea = $bruto - $descuentoLinea;
+            $comisionMonto = $subtotalLinea * ($item['comision_porcentaje'] / 100);
+
+            $subtotal += $bruto;
+            $totalDescuento += $descuentoLinea;
+
+            $lineas[] = [
+                'service_id' => $service->id,
+                'employee_id' => $item['employee_id'],
+                'cantidad' => $item['cantidad'],
+                'precio' => $precio,
+                'descuento' => $descuentoLinea,
+                'subtotal' => $subtotalLinea,
+                'comision_porcentaje' => $item['comision_porcentaje'],
+                'comision_monto' => $comisionMonto,
+            ];
+        }
+
+        return [$lineas, $subtotal, $totalDescuento];
     }
 
     /**

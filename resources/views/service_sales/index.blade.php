@@ -103,6 +103,25 @@ serviceSaleForm()
                                     Ver
                                 </button>
                                 @if($venta->sePuedeCancelar())
+                                    <button @click="editSale({{ Illuminate\Support\Js::from([
+                                                'id' => $venta->id,
+                                                'cliente_nombre' => $venta->cliente_nombre,
+                                                'metodo_pago' => $venta->metodo_pago,
+                                                'notas' => $venta->notasEditables(),
+                                                'total' => (float) $venta->total,
+                                                'items' => $venta->details->map(fn ($d) => [
+                                                    'service_id' => $d->service_id,
+                                                    'employee_id' => $d->employee_id,
+                                                    'cantidad' => $d->cantidad,
+                                                    'descuento' => (float) $d->descuento,
+                                                    'comision_porcentaje' => (float) $d->comision_porcentaje,
+                                                    'precio' => (float) $d->precio,
+                                                    'search' => $d->service->nombre ?? '',
+                                                ])->values(),
+                                            ]) }})"
+                                            class="text-amber-700 hover:text-amber-900 font-medium text-xs bg-amber-50 px-2.5 py-1 rounded-md transition">
+                                        Editar
+                                    </button>
                                     <form action="{{ route('service-sales.destroy', $venta->id) }}" method="POST" class="inline-block" @submit.prevent="$dispatch('confirm-action', { form: $el, type: 'cancel', title: 'Cancelar venta de servicios', question: '¿Estás seguro de cancelar la venta', name: '#{{ $venta->id }}', message: 'La venta quedará marcada como cancelada.', confirmText: 'Sí, cancelar venta' })">
                                         @csrf
                                         @method('DELETE')
@@ -130,13 +149,18 @@ serviceSaleForm()
 @endsection
 
 @section('modals')
-    <!-- MODAL NUEVA VENTA -->
+    <!-- MODAL NUEVA VENTA / EDITAR VENTA -->
     <div x-show="openCreateModal" class="fixed inset-0 z-50 overflow-y-auto bg-black/50 flex items-center justify-center p-4" x-cloak>
         <div class="bg-white rounded-2xl max-w-3xl w-full p-6 shadow-xl relative" @click.away="openCreateModal = false">
-            <h3 class="text-lg font-bold text-gray-900 mb-4">Nueva Venta de Servicios</h3>
+            <h3 class="text-lg font-bold text-gray-900" :class="editingId ? 'mb-1' : 'mb-4'" x-text="editingId ? 'Editar venta de servicios #' + editingId : 'Nueva Venta de Servicios'"></h3>
+            <p class="text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-2 mb-4" x-show="editingId">
+                Corrige los datos y guarda. Puedes quitar servicios con la ✕: su precio y su comisión se restan de la venta y de la caja.
+                Los servicios que ya estaban conservan el precio con que se vendieron.
+            </p>
 
-            <form action="{{ route('service-sales.store') }}" method="POST">
+            <form :action="editingId ? '{{ url('service-sales') }}/' + editingId : '{{ route('service-sales.store') }}'" method="POST">
                 @csrf
+                <input type="hidden" name="_method" value="PUT" :disabled="!editingId">
 
                 <div class="grid grid-cols-2 gap-4 mb-4">
                     <div>
@@ -234,12 +258,18 @@ serviceSaleForm()
                         <p class="text-xs text-gray-500">Subtotal: <span x-text="'$' + subtotal().toFixed(2)"></span></p>
                         <p class="text-xs text-gray-500" x-show="totalDescuento() > 0">Descuento total: <span class="text-red-500" x-text="'-$' + totalDescuento().toFixed(2)"></span></p>                        <p class="text-xs text-gray-500">Comisiones totales: <span class="text-indigo-500" x-text="'$' + totalComision().toFixed(2)"></span></p>
                         <span class="text-lg font-bold text-pink-600">Total a cobrar: <span x-text="'$' + total().toFixed(2)"></span></span>
+                        <p class="text-xs" x-show="editingId" :class="total() < totalAnterior ? 'text-red-500' : 'text-gray-500'">
+                            Total anterior: <span x-text="'$' + totalAnterior.toFixed(2)"></span>
+                            <span x-show="Math.abs(total() - totalAnterior) >= 0.01" x-text="'(' + (total() < totalAnterior ? '−' : '+') + '$' + Math.abs(total() - totalAnterior).toFixed(2) + ')'"></span>
+                        </p>
                     </div>
                 </div>
 
                 <div class="flex justify-end gap-3">
                     <button type="button" @click="openCreateModal = false" class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium">Cancelar</button>
-                    <button type="submit" class="bg-pink-600 hover:bg-pink-700 text-white px-5 py-2 rounded-lg text-sm font-medium shadow">Registrar Venta</button>
+                    <button type="submit" class="text-white px-5 py-2 rounded-lg text-sm font-medium shadow"
+                            :class="editingId ? 'bg-amber-600 hover:bg-amber-700' : 'bg-pink-600 hover:bg-pink-700'"
+                            x-text="editingId ? 'Guardar cambios' : 'Registrar Venta'">Registrar Venta</button>
                 </div>
             </form>
         </div>
@@ -305,13 +335,41 @@ serviceSaleForm()
                 cliente_nombre: '',
                 metodo_pago: 'efectivo',
                 notas: '',
+                editingId: null,
+                totalAnterior: 0,
+                preciosAnteriores: {},
 
                 openModal() {
+                    this.editingId = null;
+                    this.preciosAnteriores = {};
                     this.items = [{ service_id: '', employee_id: '', cantidad: 1, descuento: 0, comision_porcentaje: 0, search: '', open: false }];
                     this.cliente_nombre = '';
                     this.metodo_pago = 'efectivo';
                     this.notas = '';
                     this.openCreateModal = true;
+                },
+
+                // Abre el mismo formulario con los datos de una venta para corregirla.
+                editSale(venta) {
+                    this.editingId = venta.id;
+                    this.totalAnterior = venta.total;
+                    this.cliente_nombre = venta.cliente_nombre || '';
+                    this.metodo_pago = venta.metodo_pago;
+                    this.notas = venta.notas || '';
+                    this.preciosAnteriores = {};
+                    venta.items.forEach(item => { this.preciosAnteriores[item.service_id] = item.precio; });
+                    this.items = venta.items.map(item => ({ ...item, open: false }));
+                    this.openCreateModal = true;
+                },
+
+                // Precio de la línea: al editar, los servicios que ya estaban en la
+                // venta conservan su precio original (igual que en el servidor).
+                precioDe(item) {
+                    if (this.editingId && this.preciosAnteriores[item.service_id] !== undefined) {
+                        return parseFloat(this.preciosAnteriores[item.service_id]);
+                    }
+                    const service = this.services.find(s => s.id === item.service_id);
+                    return service ? parseFloat(service.precio) : 0;
                 },
 
                 addItem() {
@@ -335,17 +393,15 @@ serviceSaleForm()
                 },
 
                 lineTotal(item) {
-                    const service = this.services.find(s => s.id === item.service_id);
-                    if (!service || !item.cantidad) return 0;
-                    const bruto = parseFloat(service.precio) * item.cantidad;
+                    if (!item.service_id || !item.cantidad) return 0;
+                    const bruto = this.precioDe(item) * item.cantidad;
                     return Math.max(bruto - (parseFloat(item.descuento) || 0), 0);
                 },
 
                 subtotal() {
                     return this.items.reduce((sum, item) => {
-                        const service = this.services.find(s => s.id === item.service_id);
-                        if (!service || !item.cantidad) return sum;
-                        return sum + (parseFloat(service.precio) * item.cantidad);
+                        if (!item.service_id || !item.cantidad) return sum;
+                        return sum + (this.precioDe(item) * item.cantidad);
                     }, 0);
                 },
 

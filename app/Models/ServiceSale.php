@@ -46,6 +46,28 @@ class ServiceSale extends Model
      * HOY que sigue abierta. Las ventas de días anteriores no se pueden
      * cancelar, aunque su caja haya quedado abierta.
      */
+    /**
+     * Líneas de las notas que registran ediciones de la venta.
+     */
+    public function registrosDeEdicion(): array
+    {
+        return array_values(array_filter(
+            preg_split('/\R/', (string) $this->notas),
+            fn ($linea) => str_starts_with(trim($linea), '[Editada el')
+        ));
+    }
+
+    /**
+     * Notas escritas por el usuario, sin los registros de edición.
+     */
+    public function notasEditables(): string
+    {
+        return trim(implode("\n", array_filter(
+            preg_split('/\R/', (string) $this->notas),
+            fn ($linea) => !str_starts_with(trim($linea), '[Editada el')
+        )));
+    }
+
     public function sePuedeCancelar(): bool
     {
         return $this->estado === 'completada'
