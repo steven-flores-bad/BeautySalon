@@ -50,6 +50,7 @@ Route::middleware(['auth', 'activo'])->group(function () {
     Route::resource('sales', SaleController::class)->only(['index', 'store', 'destroy']);
 
     // Ventas de Servicios
+    Route::get('/service-sales/historial', [ServiceSaleController::class, 'history'])->name('service-sales.history');
     Route::resource('service-sales', ServiceSaleController::class)->only(['index', 'store', 'update', 'destroy']);
 
     // Caja

@@ -84,8 +84,12 @@
                                 Ventas de productos
                             </a>
                             <a href="{{ route('service-sales.index') }}"
-                               class="block px-4 py-2 text-sm {{ request()->routeIs('service-sales.*') ? 'text-pink-600 bg-pink-50 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
+                               class="block px-4 py-2 text-sm {{ request()->routeIs('service-sales.index') ? 'text-pink-600 bg-pink-50 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
                                 Ventas de servicios
+                            </a>
+                            <a href="{{ route('service-sales.history') }}"
+                               class="block px-4 py-2 text-sm {{ request()->routeIs('service-sales.history') ? 'text-pink-600 bg-pink-50 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
+                                Historial de servicios
                             </a>
                         </div>
                     </div>
@@ -185,7 +189,8 @@
         <div class="pt-1">
             <p class="px-3 py-1 text-xs uppercase tracking-wide font-semibold text-gray-400">Ventas</p>
             <a href="{{ route('sales.index') }}" class="block px-3 py-2 rounded-lg text-base font-semibold {{ request()->routeIs('sales.*') ? 'bg-gray-100 border border-gray-200 text-pink-600' : 'text-gray-700 hover:bg-pink-50 hover:text-pink-600' }}">Ventas de productos</a>
-            <a href="{{ route('service-sales.index') }}" class="block px-3 py-2 rounded-lg text-base font-semibold {{ request()->routeIs('service-sales.*') ? 'bg-gray-100 border border-gray-200 text-pink-600' : 'text-gray-700 hover:bg-pink-50 hover:text-pink-600' }}">Ventas de servicios</a>
+            <a href="{{ route('service-sales.index') }}" class="block px-3 py-2 rounded-lg text-base font-semibold {{ request()->routeIs('service-sales.index') ? 'bg-gray-100 border border-gray-200 text-pink-600' : 'text-gray-700 hover:bg-pink-50 hover:text-pink-600' }}">Ventas de servicios</a>
+            <a href="{{ route('service-sales.history') }}" class="block px-3 py-2 rounded-lg text-base font-semibold {{ request()->routeIs('service-sales.history') ? 'bg-gray-100 border border-gray-200 text-pink-600' : 'text-gray-700 hover:bg-pink-50 hover:text-pink-600' }}">Historial de servicios</a>
         </div>
 
         <a href="{{ route('expenses.index') }}" class="block px-3 py-2 rounded-lg text-base font-semibold {{ request()->routeIs('expenses.*') ? 'bg-gray-100 border border-gray-200 text-pink-600' : 'text-gray-700 hover:bg-pink-50 hover:text-pink-600' }}">Gastos</a>

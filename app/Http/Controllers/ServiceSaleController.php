@@ -12,28 +12,16 @@ use Illuminate\Support\Facades\DB;
 class ServiceSaleController extends Controller
 {
     /**
-     * Listado de ventas de servicios con búsqueda y paginación.
+     * Ventas de servicios DE HOY (con búsqueda y filtro por empleada).
+     * Las de días anteriores están en el historial.
      */
     public function index(Request $request)
     {
         $search = $request->input('search');
-        $fechaFiltro = $request->input('fecha');
         $employeeFiltro = $request->input('employee_id');
 
-        $serviceSales = ServiceSale::with(['user', 'details.service', 'details.employee', 'cashRegister'])
-                            ->withSum('details', 'cantidad')
-                            ->when($search, function ($query, $search) {
-                                return $query->where('cliente_nombre', 'like', "%{$search}%")
-                                             ->orWhere('id', $search);
-                            })
-                            ->when($fechaFiltro, function ($query, $fechaFiltro) {
-                                return $query->whereDate('created_at', $fechaFiltro);
-                            })
-                            ->when($employeeFiltro, function ($query, $employeeFiltro) {
-                                return $query->whereHas('details', function ($q) use ($employeeFiltro) {
-                                    $q->where('employee_id', $employeeFiltro);
-                                });
-                            })
+        $serviceSales = $this->consulta($search, $employeeFiltro)
+                            ->whereDate('created_at', today())
                             ->latest()
                             ->paginate(10)
                             ->withQueryString();
@@ -44,7 +32,48 @@ class ServiceSaleController extends Controller
 
         $cajaAbierta = CashRegister::abiertaHoy();
 
-        return view('service_sales.index', compact('serviceSales', 'search', 'fechaFiltro', 'employeeFiltro', 'services', 'employees', 'cajaAbierta'));
+        return view('service_sales.index', compact('serviceSales', 'search', 'employeeFiltro', 'services', 'employees', 'cajaAbierta'));
+    }
+
+    /**
+     * Historial: ventas de servicios de días anteriores, con filtros por
+     * rango de fechas, empleada y búsqueda. Solo consulta (no se editan).
+     */
+    public function history(Request $request)
+    {
+        $search = $request->input('search');
+        $employeeFiltro = $request->input('employee_id');
+        $desde = $request->input('desde');
+        $hasta = $request->input('hasta');
+
+        $query = $this->consulta($search, $employeeFiltro)
+                      ->whereDate('created_at', '<', today())
+                      ->when($desde, fn ($q) => $q->whereDate('created_at', '>=', $desde))
+                      ->when($hasta, fn ($q) => $q->whereDate('created_at', '<=', $hasta));
+
+        // Totales de lo filtrado (solo ventas completadas).
+        $totalFiltrado = (float) (clone $query)->where('estado', 'completada')->sum('total');
+        $cantidadFiltrada = (clone $query)->where('estado', 'completada')->count();
+
+        $serviceSales = $query->latest()->paginate(15)->withQueryString();
+
+        $employees = Employee::orderBy('nombre')->get();
+
+        return view('service_sales.history', compact('serviceSales', 'search', 'employeeFiltro', 'desde', 'hasta', 'employees', 'totalFiltrado', 'cantidadFiltrada'));
+    }
+
+    /**
+     * Consulta base de ventas de servicios con búsqueda (cliente o número
+     * de venta) y filtro por empleada.
+     */
+    private function consulta(?string $search, $employeeFiltro)
+    {
+        return ServiceSale::with(['user', 'details.service', 'details.employee', 'cashRegister'])
+                    ->withSum('details', 'cantidad')
+                    ->when($search, fn ($query) => $query->where(function ($q) use ($search) {
+                        $q->where('cliente_nombre', 'like', "%{$search}%")->orWhere('id', $search);
+                    }))
+                    ->when($employeeFiltro, fn ($query) => $query->whereHas('details', fn ($q) => $q->where('employee_id', $employeeFiltro)));
     }
 
     /**
