@@ -34,7 +34,7 @@
            class="p-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-gray-500">
             ‹
         </a>
-        <input type="date" name="fecha" value="{{ $fecha }}" onchange="this.form.submit()"
+        <input type="text" data-fecha placeholder="dd/mm/aaaa" autocomplete="off" name="fecha" value="{{ $fecha }}" onchange="this.form.submit()"
                class="border border-gray-300 rounded-lg p-2 text-sm focus:ring-pink-500 focus:border-pink-500">
         <a href="{{ route('reports.services', ['periodo' => $periodo, 'fecha' => $fechaSiguiente]) }}"
            class="p-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-gray-500">

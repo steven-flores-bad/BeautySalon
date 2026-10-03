@@ -22,6 +22,10 @@
     <style>
         [x-cloak] { display: none !important; }
     </style>
+    <!-- Calendario en español con formato dd/mm/aaaa (no depende del idioma del navegador) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/l10n/es.js"></script>
     @stack('styles')
 </head>
 <body class="@yield('body-class', 'bg-gray-50') text-gray-800 font-sans antialiased" @hasSection('body-data') x-data="{!! trim($__env->yieldContent('body-data')) !!}" @endif>
@@ -44,6 +48,23 @@
     @include('components.confirm-modal')
 
     @include('components.session-timeout')
+
+    <script>
+        // Campos de fecha: se muestran como dd/mm/aaaa, pero al servidor se
+        // envían como aaaa-mm-dd (lo que esperan los controladores).
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('input[data-fecha]').forEach(campo => {
+                flatpickr(campo, {
+                    locale: 'es',
+                    dateFormat: 'Y-m-d',
+                    altInput: true,
+                    altFormat: 'd/m/Y',
+                    allowInput: true,
+                    disableMobile: true,
+                });
+            });
+        });
+    </script>
 
     @stack('scripts')
 </body>

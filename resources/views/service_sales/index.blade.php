@@ -46,7 +46,7 @@ serviceSaleForm()
         <input type="text" name="search" value="{{ $search ?? '' }}" placeholder="Buscar por cliente o # de venta..."
                class="flex-1 min-w-[200px] px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-pink-500 shadow-sm">
 
-        <input type="date" name="fecha" value="{{ $fechaFiltro ?? '' }}" onchange="this.form.submit()"
+        <input type="text" data-fecha placeholder="dd/mm/aaaa" autocomplete="off" name="fecha" value="{{ $fechaFiltro ?? '' }}" onchange="this.form.submit()"
                class="px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-pink-500 shadow-sm">
 
         <select name="employee_id" onchange="this.form.submit()" class="px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-pink-500 shadow-sm">
