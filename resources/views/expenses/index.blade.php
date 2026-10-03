@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Gastos - JulySalon')
+@section('title', ($historial ? 'Historial de Gastos' : 'Gastos') . ' - JulySalon')
 
 @section('body-data')
 { openCreateModal: {{ $errors->any() && !old('_edit_id') ? 'true' : 'false' }}, openEditModal: {{ old('_edit_id') ? 'true' : 'false' }}, editForm: {{ Illuminate\Support\Js::from(old('_edit_id') ? ['id' => old('_edit_id'), 'fecha' => old('fecha'), 'categoria' => old('categoria'), 'descripcion' => old('descripcion'), 'monto' => old('monto'), 'metodo_pago' => old('metodo_pago'), 'notas' => old('notas')] : new stdClass) }} }
@@ -24,28 +24,68 @@
         </div>
     @endif
 
-    <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
-        <h1 class="text-2xl font-bold text-gray-900 w-full">Gastos</h1>
+    @php
+        // Página actual (gastos de hoy o historial) y texto del período.
+        $ruta = $historial ? 'expenses.history' : 'expenses.index';
+        $textoPeriodo = match ($periodo) {
+            'semana' => 'semana del ' . $inicio->format('d/m') . ' al ' . $fin->format('d/m/Y'),
+            'mes' => ucfirst($inicio->translatedFormat('F Y')),
+            default => $historial ? $inicio->format('d/m/Y') : 'hoy',
+        };
+    @endphp
 
-        <button @click="openCreateModal = true" class="w-full sm:w-auto bg-pink-600 hover:bg-pink-700 text-white font-medium px-5 py-2 rounded-lg shadow transition text-sm flex items-center justify-center gap-2 whitespace-nowrap">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-            Nuevo Gasto
-        </button>
+    <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+        <div class="w-full">
+            <h1 class="text-2xl font-bold text-gray-900">{{ $historial ? 'Historial de Gastos' : 'Gastos de Hoy' }}</h1>
+            <p class="text-sm text-gray-400">
+                @if ($periodo === 'dia')
+                    {{ ucfirst($inicio->translatedFormat('l, d \d\e F \d\e Y')) }}
+                @else
+                    Del {{ $inicio->format('d/m/Y') }} al {{ $fin->format('d/m/Y') }}
+                @endif
+                @if ($historial)
+                    · Gastos de días anteriores. Los de hoy están en "Gastos".
+                @endif
+            </p>
+        </div>
+
+        @if ($historial)
+            <a href="{{ route('expenses.index') }}" class="w-full sm:w-auto bg-pink-600 hover:bg-pink-700 text-white font-medium px-5 py-2 rounded-lg shadow transition text-sm flex items-center justify-center gap-2 whitespace-nowrap">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                Gastos de hoy
+            </a>
+        @else
+            <a href="{{ route('expenses.history') }}" class="w-full sm:w-auto bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium px-4 py-2 rounded-lg shadow-sm transition text-sm flex items-center justify-center gap-2 whitespace-nowrap">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                Historial
+            </a>
+            <button @click="openCreateModal = true" class="w-full sm:w-auto bg-pink-600 hover:bg-pink-700 text-white font-medium px-5 py-2 rounded-lg shadow transition text-sm flex items-center justify-center gap-2 whitespace-nowrap">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                Nuevo Gasto
+            </button>
+        @endif
     </div>
 
-    <!-- Filtros: mes, categoría y búsqueda -->
-    <form method="GET" action="{{ route('expenses.index') }}" class="flex flex-wrap items-center gap-2 mb-6">
-        <input type="hidden" name="mes" value="{{ $mes }}">
-        <div class="flex items-center gap-1">
-            <a href="{{ route('expenses.index', array_merge(request()->except('page'), ['mes' => $inicioMes->copy()->subMonth()->format('Y-m')])) }}"
-               class="p-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-gray-500">‹</a>
-            <span class="px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 min-w-[9rem] text-center">{{ ucfirst($inicioMes->translatedFormat('F Y')) }}</span>
-            <a href="{{ route('expenses.index', array_merge(request()->except('page'), ['mes' => $inicioMes->copy()->addMonth()->format('Y-m')])) }}"
-               class="p-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-gray-500">›</a>
-            @if($mes !== today()->format('Y-m'))
-                <a href="{{ route('expenses.index', array_merge(request()->except(['page', 'mes']))) }}" class="text-xs text-pink-600 hover:underline whitespace-nowrap ml-1">Este mes</a>
-            @endif
-        </div>
+    <!-- Filtros: período (solo en el historial), categoría y búsqueda -->
+    <form method="GET" action="{{ route($ruta) }}" class="flex flex-wrap items-center gap-2 mb-6">
+        @if ($historial)
+            <select name="periodo" onchange="this.form.submit()" class="px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-pink-500 shadow-sm">
+                <option value="dia" @selected($periodo === 'dia')>Día</option>
+                <option value="semana" @selected($periodo === 'semana')>Semana</option>
+                <option value="mes" @selected($periodo === 'mes')>Mes</option>
+            </select>
+
+            <div class="flex items-center gap-1">
+                <a href="{{ route($ruta, array_merge(request()->except('page'), ['periodo' => $periodo, 'fecha' => $fechaAnterior])) }}"
+                   class="p-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-gray-500">‹</a>
+                <input type="text" data-fecha data-max-hoy placeholder="dd/mm/aaaa" autocomplete="off" name="fecha" value="{{ $fecha }}" onchange="this.form.submit()"
+                       class="w-32 px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-pink-500 shadow-sm">
+                @if (\Carbon\Carbon::parse($fechaSiguiente)->lt(today()))
+                    <a href="{{ route($ruta, array_merge(request()->except('page'), ['periodo' => $periodo, 'fecha' => $fechaSiguiente])) }}"
+                       class="p-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-gray-500">›</a>
+                @endif
+            </div>
+        @endif
 
         <select name="categoria" onchange="this.form.submit()" class="px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-pink-500 shadow-sm">
             <option value="">Todas las categorías</option>
@@ -60,28 +100,28 @@
         <button type="submit" class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-600 px-4 py-2 rounded-lg text-sm font-medium shadow-sm">Buscar</button>
 
         @if($search || $categoria)
-            <a href="{{ route('expenses.index', ['mes' => $mes]) }}" class="text-xs text-pink-600 hover:underline whitespace-nowrap">Quitar filtros</a>
+            <a href="{{ $historial ? route($ruta, ['periodo' => $periodo, 'fecha' => $fecha]) : route($ruta) }}" class="text-xs text-pink-600 hover:underline whitespace-nowrap">Quitar filtros</a>
         @endif
     </form>
 
-    <!-- Totales del mes: gastos, comisiones y total de egresos -->
+    <!-- Totales del período: gastos, comisiones y total de egresos -->
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-            <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-1">Gastos — {{ ucfirst($inicioMes->translatedFormat('F Y')) }}</p>
-            <p class="text-2xl font-bold text-red-600">${{ number_format($totalMes, 2) }}</p>
+            <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-1">Gastos — {{ $textoPeriodo }}</p>
+            <p class="text-2xl font-bold text-red-600">${{ number_format($totalGastos, 2) }}</p>
             @if($categoria || $search)
                 <p class="text-xs text-gray-400 mt-1">Con los filtros aplicados{{ $categoria ? ': ' . ($categorias[$categoria] ?? '') : '' }}</p>
             @endif
         </div>
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
             <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-1">Comisiones de empleadas</p>
-            <p class="text-2xl font-bold text-red-600">${{ number_format($comisionesMes, 2) }}</p>
-            <p class="text-xs text-gray-400 mt-1">Por los servicios vendidos en el mes</p>
+            <p class="text-2xl font-bold text-red-600">${{ number_format($totalComisiones, 2) }}</p>
+            <p class="text-xs text-gray-400 mt-1">Por los servicios vendidos — {{ $textoPeriodo }}</p>
         </div>
         <div class="bg-red-50 rounded-xl border border-red-200 shadow-sm p-5">
             <p class="text-xs text-red-400 uppercase tracking-wide font-semibold mb-1">Total de egresos</p>
             <p class="text-2xl font-bold text-red-700">${{ number_format($totalEgresos, 2) }}</p>
-            <p class="text-xs text-red-400 mt-1">Todos los gastos + comisiones del mes</p>
+            <p class="text-xs text-red-400 mt-1">Todos los gastos + comisiones — {{ $textoPeriodo }}</p>
         </div>
     </div>
 

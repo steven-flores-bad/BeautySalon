@@ -1,4 +1,4 @@
-<nav class="bg-gray-50 border-b border-gray-200 sticky top-0 z-40 shadow-sm" x-data="{ mobileMenuOpen: false, profileDropdown: false, reportsDropdown: false, productsDropdown: false, servicesDropdown: false, salesDropdown: false }">
+<nav class="bg-gray-50 border-b border-gray-200 sticky top-0 z-40 shadow-sm" x-data="{ mobileMenuOpen: false, profileDropdown: false, reportsDropdown: false, productsDropdown: false, servicesDropdown: false, salesDropdown: false, expensesDropdown: false }">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
             
@@ -94,10 +94,27 @@
                         </div>
                     </div>
 
-                    <!-- GASTOS -->
-                    <a href="{{ route('expenses.index') }}" class="px-3 py-2 rounded-lg text-sm font-semibold transition {{ request()->routeIs('expenses.*') ? 'bg-white shadow-sm border border-gray-200 text-pink-600' : 'text-gray-700 hover:text-pink-600 hover:bg-pink-50' }}">
-                        Gastos
-                    </a>
+                    <!-- GASTOS CON DROPDOWN (Gastos de hoy e Historial) -->
+                    <div class="relative" @click.away="expensesDropdown = false">
+                        <button @click="expensesDropdown = !expensesDropdown"
+                                class="flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-semibold transition {{ request()->routeIs('expenses.*') ? 'bg-white shadow-sm border border-gray-200 text-pink-600' : 'text-gray-700 hover:text-pink-600 hover:bg-pink-50' }}">
+                            Gastos
+                            <svg class="w-4 h-4 transition-transform" :class="{ 'rotate-180': expensesDropdown }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </button>
+
+                        <div x-show="expensesDropdown" x-cloak class="absolute left-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50">
+                            <a href="{{ route('expenses.index') }}"
+                               class="block px-4 py-2 text-sm {{ request()->routeIs('expenses.index') ? 'text-pink-600 bg-pink-50 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
+                                Gastos de hoy
+                            </a>
+                            <a href="{{ route('expenses.history') }}"
+                               class="block px-4 py-2 text-sm {{ request()->routeIs('expenses.history') ? 'text-pink-600 bg-pink-50 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
+                                Historial de gastos
+                            </a>
+                        </div>
+                    </div>
 
                     <!-- REPORTES CON DROPDOWN -->
                     <div class="relative" @click.away="reportsDropdown = false">
@@ -193,7 +210,12 @@
             <a href="{{ route('service-sales.history') }}" class="block px-3 py-2 rounded-lg text-base font-semibold {{ request()->routeIs('service-sales.history') ? 'bg-gray-100 border border-gray-200 text-pink-600' : 'text-gray-700 hover:bg-pink-50 hover:text-pink-600' }}">Historial de servicios</a>
         </div>
 
-        <a href="{{ route('expenses.index') }}" class="block px-3 py-2 rounded-lg text-base font-semibold {{ request()->routeIs('expenses.*') ? 'bg-gray-100 border border-gray-200 text-pink-600' : 'text-gray-700 hover:bg-pink-50 hover:text-pink-600' }}">Gastos</a>
+        <!-- GASTOS MÓVIL -->
+        <div class="pt-1">
+            <p class="px-3 py-1 text-xs uppercase tracking-wide font-semibold text-gray-400">Gastos</p>
+            <a href="{{ route('expenses.index') }}" class="block px-3 py-2 rounded-lg text-base font-semibold {{ request()->routeIs('expenses.index') ? 'bg-gray-100 border border-gray-200 text-pink-600' : 'text-gray-700 hover:bg-pink-50 hover:text-pink-600' }}">Gastos de hoy</a>
+            <a href="{{ route('expenses.history') }}" class="block px-3 py-2 rounded-lg text-base font-semibold {{ request()->routeIs('expenses.history') ? 'bg-gray-100 border border-gray-200 text-pink-600' : 'text-gray-700 hover:bg-pink-50 hover:text-pink-600' }}">Historial de gastos</a>
+        </div>
 
         <!-- REPORTES MÓVIL -->
         <div class="pt-1">

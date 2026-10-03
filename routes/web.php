@@ -60,6 +60,7 @@ Route::middleware(['auth', 'activo'])->group(function () {
     Route::post('/caja/cerrar', [CashRegisterController::class, 'close'])->name('cash-register.close');
 
     // Gastos
+    Route::get('/expenses/historial', [ExpenseController::class, 'history'])->name('expenses.history');
     Route::resource('expenses', ExpenseController::class)->only(['index', 'store', 'update', 'destroy']);
 
     // Usuarios del sistema

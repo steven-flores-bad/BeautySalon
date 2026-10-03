@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\CashRegister;
 use App\Models\Expense;
 use App\Models\ServiceSaleDetail;
+use App\Support\Periodo;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -13,40 +14,75 @@ use Illuminate\Validation\Rule;
 class ExpenseController extends Controller
 {
     /**
-     * Listado de gastos con búsqueda, filtro por mes y por categoría.
+     * Gastos DE HOY, con búsqueda y filtro por categoría.
+     * Los de días anteriores están en el historial.
      */
     public function index(Request $request)
     {
+        return $this->listado($request, historial: false);
+    }
+
+    /**
+     * Historial: gastos de días anteriores por período (día, semana o mes),
+     * con búsqueda y filtro por categoría.
+     */
+    public function history(Request $request)
+    {
+        return $this->listado($request, historial: true);
+    }
+
+    private function listado(Request $request, bool $historial)
+    {
         $search = $request->input('search');
         $categoria = $request->input('categoria');
-        $mes = $request->input('mes', today()->format('Y-m'));
+
+        if ($historial) {
+            $periodo = in_array($request->input('periodo'), Periodo::VALIDOS) ? $request->input('periodo') : 'mes';
+            $fecha = $request->input('fecha', today()->subDay()->toDateString());
+
+            // En el historial no hay "hoy": una fecha de hoy o futura pasa a ayer.
+            try {
+                if (Carbon::parse($fecha)->gte(today())) {
+                    $fecha = today()->subDay()->toDateString();
+                }
+            } catch (\Throwable $e) {
+                $fecha = today()->subDay()->toDateString();
+            }
+        } else {
+            $periodo = 'dia';
+            $fecha = today()->toDateString();
+        }
 
         try {
-            $inicioMes = Carbon::createFromFormat('Y-m', $mes)->startOfMonth();
+            [$inicio, $fin, $fechaAnterior, $fechaSiguiente] = Periodo::rango($periodo, $fecha);
         } catch (\Throwable $e) {
-            $inicioMes = today()->startOfMonth();
-            $mes = $inicioMes->format('Y-m');
+            $fecha = today()->toDateString();
+            [$inicio, $fin, $fechaAnterior, $fechaSiguiente] = Periodo::rango($periodo, $fecha);
+        }
+
+        // El historial solo incluye días anteriores a hoy.
+        if ($historial && $fin->gte(today())) {
+            $fin = today()->subDay()->endOfDay();
         }
 
         $query = Expense::with(['user', 'cashRegister'])
-                    ->whereBetween('fecha', [$inicioMes->toDateString(), $inicioMes->copy()->endOfMonth()->toDateString()])
+                    ->whereBetween('fecha', [$inicio->toDateString(), $fin->toDateString()])
                     ->when($categoria, fn ($q) => $q->where('categoria', $categoria))
                     ->when($search, fn ($q) => $q->where(function ($q) use ($search) {
                         $q->where('descripcion', 'like', "%{$search}%")
                           ->orWhere('notas', 'like', "%{$search}%");
                     }));
 
-        $totalMes = (clone $query)->sum('monto');
+        $totalGastos = (float) (clone $query)->sum('monto');
 
-        // Para el total de egresos del mes: todos los gastos (sin filtros)
-        // más las comisiones de las empleadas por los servicios vendidos.
-        $finMes = $inicioMes->copy()->endOfMonth();
-        $gastosMesSinFiltros = (float) Expense::whereBetween('fecha', [$inicioMes->toDateString(), $finMes->toDateString()])->sum('monto');
-        $comisionesMes = (float) ServiceSaleDetail::join('service_sales', 'service_sales.id', '=', 'service_sale_details.service_sale_id')
+        // Total de egresos del período: todos los gastos (sin filtros) más
+        // las comisiones de las empleadas por los servicios vendidos.
+        $gastosSinFiltros = (float) Expense::whereBetween('fecha', [$inicio->toDateString(), $fin->toDateString()])->sum('monto');
+        $totalComisiones = (float) ServiceSaleDetail::join('service_sales', 'service_sales.id', '=', 'service_sale_details.service_sale_id')
                                     ->where('service_sales.estado', 'completada')
-                                    ->whereBetween('service_sales.created_at', [$inicioMes, $finMes])
+                                    ->whereBetween('service_sales.created_at', [$inicio, $fin])
                                     ->sum('service_sale_details.comision_monto');
-        $totalEgresos = $gastosMesSinFiltros + $comisionesMes;
+        $totalEgresos = $gastosSinFiltros + $totalComisiones;
 
         $expenses = $query->orderByDesc('fecha')
                           ->orderByDesc('id')
@@ -56,7 +92,10 @@ class ExpenseController extends Controller
         $categorias = Expense::CATEGORIAS;
         $cajaAbierta = CashRegister::abiertaHoy();
 
-        return view('expenses.index', compact('expenses', 'search', 'categoria', 'mes', 'inicioMes', 'totalMes', 'comisionesMes', 'totalEgresos', 'categorias', 'cajaAbierta'));
+        return view('expenses.index', compact(
+            'historial', 'expenses', 'search', 'categoria', 'periodo', 'fecha', 'inicio', 'fin', 'fechaAnterior', 'fechaSiguiente',
+            'totalGastos', 'totalComisiones', 'totalEgresos', 'categorias', 'cajaAbierta'
+        ));
     }
 
     /**
@@ -74,7 +113,13 @@ class ExpenseController extends Controller
             ]);
         });
 
-        return redirect()->route('expenses.index', ['mes' => Carbon::parse($validated['fecha'])->format('Y-m')])
+        // Se muestra el día del gasto recién registrado (hoy o en el historial).
+        $fechaGasto = Carbon::parse($validated['fecha']);
+        $destino = $fechaGasto->isToday()
+            ? route('expenses.index')
+            : route('expenses.history', ['periodo' => 'dia', 'fecha' => $fechaGasto->toDateString()]);
+
+        return redirect($destino)
                          ->with('success', 'Gasto "' . $validated['descripcion'] . '" registrado por $' . number_format($validated['monto'], 2) . '.');
     }
 

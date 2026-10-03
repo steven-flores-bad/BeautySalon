@@ -8,6 +8,7 @@ use App\Models\Sale;
 use App\Models\SaleDetail;
 use App\Models\ServiceSale;
 use App\Models\ServiceSaleDetail;
+use App\Support\Periodo;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -214,32 +215,7 @@ class ReportController extends Controller
      */
     private function calcularRangoPeriodo(string $periodo, string $fecha): array
     {
-        $fechaAncla = Carbon::parse($fecha);
-
-        switch ($periodo) {
-            case 'semana':
-                $inicio = $fechaAncla->copy()->startOfWeek(Carbon::MONDAY);
-                $fin = $fechaAncla->copy()->endOfWeek(Carbon::SUNDAY);
-                $fechaAnterior = $inicio->copy()->subWeek()->toDateString();
-                $fechaSiguiente = $inicio->copy()->addWeek()->toDateString();
-                break;
-
-            case 'mes':
-                $inicio = $fechaAncla->copy()->startOfMonth();
-                $fin = $fechaAncla->copy()->endOfMonth();
-                $fechaAnterior = $inicio->copy()->subMonth()->toDateString();
-                $fechaSiguiente = $inicio->copy()->addMonth()->toDateString();
-                break;
-
-            default: // dia
-                $inicio = $fechaAncla->copy()->startOfDay();
-                $fin = $fechaAncla->copy()->endOfDay();
-                $fechaAnterior = $inicio->copy()->subDay()->toDateString();
-                $fechaSiguiente = $inicio->copy()->addDay()->toDateString();
-                break;
-        }
-
-        return [$inicio, $fin, $fechaAnterior, $fechaSiguiente];
+        return Periodo::rango($periodo, $fecha);
     }
 
     /**
