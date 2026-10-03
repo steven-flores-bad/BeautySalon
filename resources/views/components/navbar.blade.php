@@ -90,9 +90,10 @@
                         </div>
                     </div>
 
-                    <!-- <a href="#" class="px-3 py-2 rounded-lg text-sm font-semibold text-gray-700 hover:text-pink-600 hover:bg-pink-50 transition">
+                    <!-- GASTOS -->
+                    <a href="{{ route('expenses.index') }}" class="px-3 py-2 rounded-lg text-sm font-semibold transition {{ request()->routeIs('expenses.*') ? 'bg-white shadow-sm border border-gray-200 text-pink-600' : 'text-gray-700 hover:text-pink-600 hover:bg-pink-50' }}">
                         Gastos
-                    </a> -->
+                    </a>
 
                     <!-- REPORTES CON DROPDOWN -->
                     <div class="relative" @click.away="reportsDropdown = false">
@@ -112,6 +113,10 @@
                             <a href="{{ route('reports.services') }}"
                                class="block px-4 py-2 text-sm {{ request()->routeIs('reports.services') ? 'text-pink-600 bg-pink-50 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
                                 Reporte de Servicios
+                            </a>
+                            <a href="{{ route('reports.expenses') }}"
+                               class="block px-4 py-2 text-sm {{ request()->routeIs('reports.expenses') ? 'text-pink-600 bg-pink-50 font-medium' : 'text-gray-700 hover:bg-gray-50' }}">
+                                Reporte de Gastos
                             </a>
                         </div>
                     </div>
@@ -183,13 +188,14 @@
             <a href="{{ route('service-sales.index') }}" class="block px-3 py-2 rounded-lg text-base font-semibold {{ request()->routeIs('service-sales.*') ? 'bg-gray-100 border border-gray-200 text-pink-600' : 'text-gray-700 hover:bg-pink-50 hover:text-pink-600' }}">Ventas de servicios</a>
         </div>
 
-        <a href="#" class="block px-3 py-2 rounded-lg text-base font-semibold text-gray-700 hover:bg-pink-50 hover:text-pink-600">Gastos</a>
+        <a href="{{ route('expenses.index') }}" class="block px-3 py-2 rounded-lg text-base font-semibold {{ request()->routeIs('expenses.*') ? 'bg-gray-100 border border-gray-200 text-pink-600' : 'text-gray-700 hover:bg-pink-50 hover:text-pink-600' }}">Gastos</a>
 
         <!-- REPORTES MÓVIL -->
         <div class="pt-1">
             <p class="px-3 py-1 text-xs uppercase tracking-wide font-semibold text-gray-400">Reportes</p>
             <a href="{{ route('reports.sales') }}" class="block px-3 py-2 rounded-lg text-base font-semibold {{ request()->routeIs('reports.sales') ? 'bg-gray-100 border border-gray-200 text-pink-600' : 'text-gray-700 hover:bg-pink-50 hover:text-pink-600' }}">Reporte de Ventas</a>
             <a href="{{ route('reports.services') }}" class="block px-3 py-2 rounded-lg text-base font-semibold {{ request()->routeIs('reports.services') ? 'bg-gray-100 border border-gray-200 text-pink-600' : 'text-gray-700 hover:bg-pink-50 hover:text-pink-600' }}">Reporte de Servicios</a>
+            <a href="{{ route('reports.expenses') }}" class="block px-3 py-2 rounded-lg text-base font-semibold {{ request()->routeIs('reports.expenses') ? 'bg-gray-100 border border-gray-200 text-pink-600' : 'text-gray-700 hover:bg-pink-50 hover:text-pink-600' }}">Reporte de Gastos</a>
         </div>
 
         <div class="border-t border-gray-200 pt-3 mt-3">

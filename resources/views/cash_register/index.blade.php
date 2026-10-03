@@ -55,6 +55,12 @@
                 <div class="bg-white rounded-lg border border-amber-200 p-3">
                     <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold">Ventas en efectivo</p>
                     <p class="text-lg font-bold text-emerald-600">+${{ number_format($pendiente->totalVentas(['efectivo']), 2) }}</p>
+                    @if($pendiente->totalGastosEfectivo() > 0)
+                        <p class="text-xs text-red-500 mt-0.5">−${{ number_format($pendiente->totalGastosEfectivo(), 2) }} en gastos</p>
+                    @endif
+                    @if($pendiente->totalComisiones() > 0)
+                        <p class="text-xs text-red-500 mt-0.5">−${{ number_format($pendiente->totalComisiones(), 2) }} en comisiones</p>
+                    @endif
                 </div>
                 <div class="bg-white rounded-lg border border-amber-200 p-3">
                     <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold">Efectivo esperado</p>
@@ -102,7 +108,7 @@
 
     @elseif ($caja->estado === 'abierta')
         <!-- CAJA ABIERTA: totales en vivo + botón de cierre -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
             <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
                 <div class="flex items-start justify-between gap-2 mb-1">
                     <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold">Apertura</p>
@@ -116,6 +122,15 @@
             <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
                 <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-1">Ventas en Efectivo Hoy</p>
                 <p class="text-2xl font-bold text-emerald-600">+${{ number_format($ventasEfectivoHoy, 2) }}</p>
+            </div>
+            <!-- Egresos: lo que salió de la caja (gastos en efectivo + comisiones) -->
+            <div class="bg-red-50 rounded-xl border border-red-200 shadow-sm p-5">
+                <p class="text-xs text-red-400 uppercase tracking-wide font-semibold mb-1">Egresos</p>
+                <p class="text-2xl font-bold text-red-600">−${{ number_format($gastosEfectivoHoy + $comisionesHoy, 2) }}</p>
+                <div class="mt-2 space-y-0.5 text-xs text-red-500">
+                    <div class="flex justify-between gap-2"><span>Gastos</span><span>${{ number_format($gastosEfectivoHoy, 2) }}</span></div>
+                    <div class="flex justify-between gap-2"><span>Comisiones</span><span>${{ number_format($comisionesHoy, 2) }}</span></div>
+                </div>
             </div>
             <div class="bg-pink-50 rounded-xl border border-pink-200 shadow-sm p-5">
                 <p class="text-xs text-pink-400 uppercase tracking-wide font-semibold mb-1">Efectivo Esperado</p>
@@ -150,15 +165,25 @@
 
     @else
         <!-- CAJA YA CERRADA: resumen final -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+        {{-- Las ventas y gastos de una caja cerrada ya no se pueden modificar --}}
+        @php($gastosCierre = $caja->totalGastosEfectivo())
+        @php($comisionesCierre = $caja->comisionesDescontadas())
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
             <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
                 <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-1">Apertura</p>
                 <p class="text-xl font-bold text-gray-800">${{ number_format($caja->monto_apertura, 2) }}</p>
             </div>
             <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
                 <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-1">Ventas en Efectivo</p>
-                {{-- Valor fijo del cierre: esperado guardado menos la apertura --}}
-                <p class="text-xl font-bold text-emerald-600">+${{ number_format($caja->monto_cierre_esperado - $caja->monto_apertura, 2) }}</p>
+                <p class="text-xl font-bold text-emerald-600">+${{ number_format($caja->totalVentas(['efectivo']), 2) }}</p>
+            </div>
+            <div class="bg-red-50 rounded-xl border border-red-200 shadow-sm p-5">
+                <p class="text-xs text-red-400 uppercase tracking-wide font-semibold mb-1">Egresos</p>
+                <p class="text-xl font-bold text-red-600">−${{ number_format($gastosCierre + $comisionesCierre, 2) }}</p>
+                <div class="mt-2 space-y-0.5 text-xs text-red-500">
+                    <div class="flex justify-between gap-2"><span>Gastos</span><span>${{ number_format($gastosCierre, 2) }}</span></div>
+                    <div class="flex justify-between gap-2"><span>Comisiones</span><span>${{ number_format($comisionesCierre, 2) }}</span></div>
+                </div>
             </div>
             <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
                 <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-1">Efectivo Esperado</p>

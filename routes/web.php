@@ -10,6 +10,7 @@ use App\Http\Controllers\ServiceCategoryController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\ServiceSaleController;
 use App\Http\Controllers\CashRegisterController;
+use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -42,6 +43,8 @@ Route::middleware(['auth', 'activo'])->group(function () {
     Route::get('/reports/services', [ReportController::class, 'services'])->name('reports.services');
     Route::get('/reports/services/pdf', [ReportController::class, 'servicesPdf'])->name('reports.services.pdf');
     Route::get('/reports/employees/pdf', [ReportController::class, 'employeesPdf'])->name('reports.employees.pdf');
+    Route::get('/reports/expenses', [ReportController::class, 'expenses'])->name('reports.expenses');
+    Route::get('/reports/expenses/pdf', [ReportController::class, 'expensesPdf'])->name('reports.expenses.pdf');
 
     // Ventas de Productos (index incluido: usa el método index() real del controlador)
     Route::resource('sales', SaleController::class)->only(['index', 'store', 'destroy']);
@@ -54,6 +57,9 @@ Route::middleware(['auth', 'activo'])->group(function () {
     Route::post('/caja/abrir', [CashRegisterController::class, 'open'])->name('cash-register.open');
     Route::put('/caja/apertura', [CashRegisterController::class, 'update'])->name('cash-register.update');
     Route::post('/caja/cerrar', [CashRegisterController::class, 'close'])->name('cash-register.close');
+
+    // Gastos
+    Route::resource('expenses', ExpenseController::class)->only(['index', 'store', 'update', 'destroy']);
 
     // Usuarios del sistema
     Route::resource('users', UserController::class)->only(['index', 'store', 'update']);

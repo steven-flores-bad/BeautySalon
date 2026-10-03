@@ -24,8 +24,10 @@ class CashRegisterController extends Controller
         // cerrada se usan los valores guardados al cerrar (ver la vista).
         $ventasEfectivoHoy = $caja ? $caja->totalVentas(['efectivo']) : 0;
         $ventasTarjetaTransferenciaHoy = $caja ? $caja->totalVentas(['tarjeta', 'transferencia']) : 0;
+        $gastosEfectivoHoy = $caja ? $caja->totalGastosEfectivo() : 0;
+        $comisionesHoy = $caja ? $caja->totalComisiones() : 0;
 
-        $efectivoEsperado = $caja ? $caja->monto_apertura + $ventasEfectivoHoy : null;
+        $efectivoEsperado = $caja ? $caja->efectivoEsperado() : null;
 
         // Caja de un día anterior que quedó abierta: hay que cerrarla
         // (con su arqueo) antes de poder abrir la de hoy.
@@ -36,6 +38,8 @@ class CashRegisterController extends Controller
             'caja',
             'ventasEfectivoHoy',
             'ventasTarjetaTransferenciaHoy',
+            'gastosEfectivoHoy',
+            'comisionesHoy',
             'efectivoEsperado',
             'pendiente',
             'cajasPendientes'

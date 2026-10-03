@@ -61,6 +61,8 @@
                     altFormat: 'd/m/Y',
                     allowInput: true,
                     disableMobile: true,
+                    // data-max-hoy: no permite elegir fechas futuras
+                    maxDate: campo.hasAttribute('data-max-hoy') ? 'today' : null,
                 });
             });
         });

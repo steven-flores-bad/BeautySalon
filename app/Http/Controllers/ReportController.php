@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\CashRegister;
+use App\Models\Expense;
 use App\Models\Sale;
 use App\Models\SaleDetail;
 use App\Models\ServiceSale;
@@ -76,6 +77,135 @@ class ReportController extends Controller
         $nombreArchivo = 'reporte-empleados-' . $datos['inicio']->format('Y-m-d') . '.pdf';
 
         return $pdf->download($nombreArchivo);
+    }
+
+    /**
+     * Reporte de gastos en pantalla: detalle, totales por categoría y
+     * resumen de ingresos - gastos = ganancia.
+     */
+    public function expenses(Request $request)
+    {
+        return view('reports.expenses', $this->obtenerDatosReporteGastos($request));
+    }
+
+    /**
+     * El mismo reporte de gastos como PDF descargable.
+     */
+    public function expensesPdf(Request $request)
+    {
+        $datos = $this->obtenerDatosReporteGastos($request);
+
+        $pdf = Pdf::loadView('reports.expenses_pdf', $datos)->setPaper('letter', 'portrait');
+
+        return $pdf->download('reporte-gastos-' . $datos['inicio']->format('Y-m-d') . '.pdf');
+    }
+
+    private function obtenerDatosReporteGastos(Request $request): array
+    {
+        $periodo = in_array($request->input('periodo'), ['dia', 'semana', 'mes'])
+                    ? $request->input('periodo')
+                    : 'mes';
+
+        $fecha = $request->input('fecha', Carbon::today()->toDateString());
+
+        [$inicio, $fin, $fechaAnterior, $fechaSiguiente] = $this->calcularRangoPeriodo($periodo, $fecha);
+
+        $gastos = Expense::with('user')
+                    ->whereBetween('fecha', [$inicio->toDateString(), $fin->toDateString()])
+                    ->orderBy('fecha')
+                    ->orderBy('id')
+                    ->get();
+
+        $totalGastos = (float) $gastos->sum('monto');
+
+        $porCategoria = $gastos->groupBy('categoria')
+                            ->map(fn ($grupo, $clave) => (object) [
+                                'nombre' => Expense::CATEGORIAS[$clave] ?? ucfirst($clave),
+                                'monto' => (float) $grupo->sum('monto'),
+                                'cantidad' => $grupo->count(),
+                                'porcentaje' => $totalGastos > 0 ? $grupo->sum('monto') / $totalGastos * 100 : 0,
+                            ])
+                            ->sortByDesc('monto')
+                            ->values();
+
+        // Ingresos del mismo período (solo ventas completadas).
+        $ingresosProductos = (float) Sale::whereBetween('created_at', [$inicio, $fin])->where('estado', 'completada')->sum('total');
+        $ingresosServicios = (float) ServiceSale::whereBetween('created_at', [$inicio, $fin])->where('estado', 'completada')->sum('total');
+        $totalIngresos = $ingresosProductos + $ingresosServicios;
+
+        // Comisiones de las empleadas por los servicios vendidos en el período.
+        $comisionesPorEmpleada = ServiceSaleDetail::join('service_sales', 'service_sales.id', '=', 'service_sale_details.service_sale_id')
+                                    ->where('service_sales.estado', 'completada')
+                                    ->whereBetween('service_sales.created_at', [$inicio, $fin])
+                                    ->where('service_sale_details.comision_monto', '>', 0)
+                                    ->with('employee')
+                                    ->get(['service_sale_details.*'])
+                                    ->groupBy('employee_id')
+                                    ->map(fn ($grupo) => (object) [
+                                        'nombre' => $grupo->first()->employee->nombre ?? 'Empleado eliminado',
+                                        'servicios' => $grupo->sum('cantidad'),
+                                        'monto' => (float) $grupo->sum('comision_monto'),
+                                    ])
+                                    ->sortByDesc('monto')
+                                    ->values();
+        $totalComisiones = (float) $comisionesPorEmpleada->sum('monto');
+
+        // Cajas abiertas en el período: con cuánto se inició cada una.
+        $cajasDelPeriodo = CashRegister::whereBetween('fecha', [$inicio->toDateString(), $fin->toDateString()])
+                                ->orderBy('fecha')
+                                ->get();
+
+        return [
+            'cajasDelPeriodo' => $cajasDelPeriodo,
+            'totalApertura' => $cajasDelPeriodo->sum('monto_apertura'),
+            'resumenCaja' => $this->resumenCaja($cajasDelPeriodo),
+            'periodo' => $periodo,
+            'fecha' => $fecha,
+            'inicio' => $inicio,
+            'fin' => $fin,
+            'fechaAnterior' => $fechaAnterior,
+            'fechaSiguiente' => $fechaSiguiente,
+            'gastos' => $gastos,
+            'totalGastos' => $totalGastos,
+            'porCategoria' => $porCategoria,
+            'ingresosProductos' => $ingresosProductos,
+            'ingresosServicios' => $ingresosServicios,
+            'totalIngresos' => $totalIngresos,
+            'comisionesPorEmpleada' => $comisionesPorEmpleada,
+            'totalComisiones' => $totalComisiones,
+            'ganancia' => $totalIngresos - $totalGastos - $totalComisiones,
+        ];
+    }
+
+    /**
+     * Dinero en caja de las cajas del período:
+     * apertura + ventas en efectivo - gastos en efectivo.
+     * Para una caja cerrada se usa el esperado guardado al cerrar.
+     */
+    private function resumenCaja($cajas): object
+    {
+        $ventasEfectivo = 0;
+        $gastosEfectivo = 0;
+        $comisiones = 0;
+        $ventasOtros = 0;
+        $totalEnCaja = 0;
+
+        foreach ($cajas as $caja) {
+            $ventasEfectivo += $caja->totalVentas(['efectivo']);
+            $gastosEfectivo += $caja->totalGastosEfectivo();
+            $comisiones += $caja->comisionesDescontadas();
+            $ventasOtros += $caja->totalVentas(['tarjeta', 'transferencia']);
+            $totalEnCaja += $caja->estaAbierta() ? $caja->efectivoEsperado() : (float) $caja->monto_cierre_esperado;
+        }
+
+        return (object) [
+            'apertura' => (float) $cajas->sum('monto_apertura'),
+            'ventasEfectivo' => $ventasEfectivo,
+            'gastosEfectivo' => $gastosEfectivo,
+            'comisiones' => $comisiones,
+            'ventasOtros' => $ventasOtros,
+            'totalEnCaja' => $totalEnCaja,
+        ];
     }
 
     /**
@@ -299,6 +429,7 @@ class ReportController extends Controller
             'fechaSiguiente' => $fechaSiguiente,
             'cajasDelPeriodo' => $cajasDelPeriodo,
             'totalApertura' => $cajasDelPeriodo->sum('monto_apertura'),
+            'resumenCaja' => $this->resumenCaja($cajasDelPeriodo),
             'totalPeriodo' => $totalPeriodo,
             'totalSubtotal' => $totalSubtotal,
             'totalDescuentos' => $totalDescuentos,

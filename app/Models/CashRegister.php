@@ -91,12 +91,56 @@ class CashRegister extends Model
         return $this->fecha->isToday();
     }
 
+    public function expenses()
+    {
+        return $this->hasMany(Expense::class);
+    }
+
     /**
-     * Efectivo que debería haber en la caja: apertura + ventas en efectivo.
+     * Gastos pagados en efectivo con esta caja (salieron de la caja).
+     */
+    public function totalGastosEfectivo(): float
+    {
+        return (float) $this->expenses()->where('metodo_pago', 'efectivo')->sum('monto');
+    }
+
+    /**
+     * Comisiones de las empleadas por los servicios vendidos en esta caja
+     * (ventas completadas). Se pagan en efectivo desde la caja.
+     */
+    public function totalComisiones(): float
+    {
+        return (float) ServiceSaleDetail::join('service_sales', 'service_sales.id', '=', 'service_sale_details.service_sale_id')
+                                        ->where('service_sales.cash_register_id', $this->id)
+                                        ->where('service_sales.estado', 'completada')
+                                        ->sum('service_sale_details.comision_monto');
+    }
+
+    /**
+     * Efectivo que debería haber en la caja:
+     * apertura + ventas en efectivo - gastos en efectivo - comisiones.
      */
     public function efectivoEsperado(): float
     {
-        return (float) $this->monto_apertura + $this->totalVentas(['efectivo']);
+        return (float) $this->monto_apertura + $this->totalVentas(['efectivo'])
+             - $this->totalGastosEfectivo() - $this->totalComisiones();
+    }
+
+    /**
+     * Comisiones que realmente se descontaron al cerrar esta caja. Las cajas
+     * cerradas antes de que las comisiones salieran de la caja no las
+     * descontaron, así que se deduce del esperado guardado al cierre.
+     */
+    public function comisionesDescontadas(): float
+    {
+        if ($this->estaAbierta()) {
+            return $this->totalComisiones();
+        }
+
+        $descontado = (float) $this->monto_apertura + $this->totalVentas(['efectivo'])
+                    - $this->totalGastosEfectivo() - (float) $this->monto_cierre_esperado;
+
+        return max(round($descontado, 2), 0);
     }
 
     public function estaAbierta(): bool
