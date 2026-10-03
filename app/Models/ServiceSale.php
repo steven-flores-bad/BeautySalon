@@ -42,12 +42,15 @@ class ServiceSale extends Model
     }
 
     /**
-     * Solo se puede cancelar si está completada y su caja sigue abierta
-     * (o si es una venta antigua sin caja asignada).
+     * Solo se puede cancelar si está completada y pertenece a la caja de
+     * HOY que sigue abierta. Las ventas de días anteriores no se pueden
+     * cancelar, aunque su caja haya quedado abierta.
      */
     public function sePuedeCancelar(): bool
     {
         return $this->estado === 'completada'
-            && (!$this->cashRegister || $this->cashRegister->estaAbierta());
+            && $this->cashRegister
+            && $this->cashRegister->estaAbierta()
+            && $this->cashRegister->esDeHoy();
     }
 }

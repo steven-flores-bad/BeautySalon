@@ -149,7 +149,7 @@ class SaleController extends Controller
                 }
 
                 if (!$sale->sePuedeCancelar()) {
-                    throw new \Exception('No se puede cancelar la venta #' . $sale->id . ' porque su caja ya fue cerrada.');
+                    throw new \Exception('No se puede cancelar la venta #' . $sale->id . ' porque es de un día anterior o su caja ya fue cerrada.');
                 }
 
                 foreach ($sale->details as $detail) {

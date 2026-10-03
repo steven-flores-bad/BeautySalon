@@ -74,6 +74,31 @@ class CashRegister extends Model
         )));
     }
 
+    /**
+     * Caja de un día anterior que quedó abierta (la más antigua primero).
+     * Debe cerrarse antes de poder abrir la caja de hoy.
+     */
+    public static function pendienteAnterior(): ?self
+    {
+        return static::where('estado', 'abierta')
+                     ->whereDate('fecha', '<', today())
+                     ->orderBy('fecha')
+                     ->first();
+    }
+
+    public function esDeHoy(): bool
+    {
+        return $this->fecha->isToday();
+    }
+
+    /**
+     * Efectivo que debería haber en la caja: apertura + ventas en efectivo.
+     */
+    public function efectivoEsperado(): float
+    {
+        return (float) $this->monto_apertura + $this->totalVentas(['efectivo']);
+    }
+
     public function estaAbierta(): bool
     {
         return $this->estado === 'abierta';

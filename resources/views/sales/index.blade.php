@@ -93,7 +93,7 @@ saleForm()
                                         </button>
                                     </form>
                                 @elseif($sale->estado === 'completada')
-                                    <span class="text-gray-400 text-xs px-2.5 py-1" title="La caja de esta venta ya fue cerrada">Caja cerrada</span>
+                                    <span class="text-gray-400 text-xs px-2.5 py-1" title="Solo se pueden cancelar ventas de la caja de hoy mientras está abierta">No cancelable</span>
                                 @endif
                             </td>
                         </tr>

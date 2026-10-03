@@ -4,7 +4,7 @@
 @section('max-width', 'max-w-3xl')
 
 @section('body-data')
-{ openCloseModal: false, openEditModal: {{ $errors->has('monto_apertura') && $caja ? 'true' : 'false' }} }
+{ openCloseModal: false, openEditModal: {{ $errors->has('monto_apertura') && $caja ? 'true' : 'false' }}, cierre: {} }
 @endsection
 
 @section('content')
@@ -27,7 +27,57 @@
     <h1 class="text-2xl font-bold text-gray-900 mb-1">Caja</h1>
     <p class="text-sm text-gray-400 mb-6">{{ \Carbon\Carbon::today()->translatedFormat('l, d \d\e F \d\e Y') }}</p>
 
-    @if (!$caja)
+    @if ($pendiente)
+        <!-- CAJA DE UN DÍA ANTERIOR QUE QUEDÓ ABIERTA -->
+        <div class="bg-amber-50 border border-amber-300 rounded-xl shadow-sm p-5 mb-6">
+            <div class="flex items-start gap-3 mb-4">
+                <svg class="w-6 h-6 text-amber-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                </svg>
+                <div>
+                    <h2 class="text-base font-bold text-amber-900">
+                        La caja del {{ $pendiente->fecha->translatedFormat('l d/m/Y') }} quedó abierta
+                    </h2>
+                    <p class="text-sm text-amber-800 mt-0.5">
+                        Ciérrala con el efectivo que se contó ese día. Hasta entonces no se puede abrir la caja de hoy.
+                        @if($cajasPendientes > 1)
+                            <span class="font-semibold">Hay {{ $cajasPendientes }} cajas pendientes; se cierran de la más antigua a la más reciente.</span>
+                        @endif
+                    </p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                <div class="bg-white rounded-lg border border-amber-200 p-3">
+                    <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold">Apertura</p>
+                    <p class="text-lg font-bold text-gray-800">${{ number_format($pendiente->monto_apertura, 2) }}</p>
+                </div>
+                <div class="bg-white rounded-lg border border-amber-200 p-3">
+                    <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold">Ventas en efectivo</p>
+                    <p class="text-lg font-bold text-emerald-600">+${{ number_format($pendiente->totalVentas(['efectivo']), 2) }}</p>
+                </div>
+                <div class="bg-white rounded-lg border border-amber-200 p-3">
+                    <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold">Efectivo esperado</p>
+                    <p class="text-lg font-bold text-pink-600">${{ number_format($pendiente->efectivoEsperado(), 2) }}</p>
+                </div>
+            </div>
+
+            <button type="button"
+                    @click="cierre = {{ Illuminate\Support\Js::from(['id' => $pendiente->id, 'fecha' => $pendiente->fecha->format('d/m/Y'), 'esperado' => number_format($pendiente->efectivoEsperado(), 2)]) }}; openCloseModal = true"
+                    class="w-full sm:w-auto bg-amber-600 hover:bg-amber-700 text-white font-medium px-5 py-2.5 rounded-lg shadow transition text-sm">
+                Cerrar caja del {{ $pendiente->fecha->format('d/m/Y') }}
+            </button>
+        </div>
+    @endif
+
+    @if (!$caja && $pendiente)
+        <!-- NO SE PUEDE ABRIR LA DE HOY HASTA CERRAR LA PENDIENTE -->
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 opacity-60">
+            <h2 class="text-lg font-bold text-gray-900 mb-1">Abrir caja de hoy</h2>
+            <p class="text-sm text-gray-500">Disponible después de cerrar la caja pendiente.</p>
+        </div>
+
+    @elseif (!$caja)
         <!-- SIN CAJA ABIERTA HOY: formulario de apertura -->
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
             <h2 class="text-lg font-bold text-gray-900 mb-1">Abrir caja de hoy</h2>
@@ -93,7 +143,7 @@
                 <h2 class="text-sm font-semibold text-gray-700">Caja abierta</h2>
                 <p class="text-xs text-gray-400">Cuando termines el día, cuenta el efectivo real y cierra la caja.</p>
             </div>
-            <button @click="openCloseModal = true" class="w-full sm:w-auto bg-gray-800 hover:bg-gray-900 text-white font-medium px-5 py-2.5 rounded-lg shadow transition text-sm whitespace-nowrap">
+            <button @click="cierre = {{ Illuminate\Support\Js::from(['id' => $caja->id, 'fecha' => $caja->fecha->format('d/m/Y'), 'esperado' => number_format($efectivoEsperado, 2)]) }}; openCloseModal = true" class="w-full sm:w-auto bg-gray-800 hover:bg-gray-900 text-white font-medium px-5 py-2.5 rounded-lg shadow transition text-sm whitespace-nowrap">
                 Cerrar Caja
             </button>
         </div>
@@ -177,18 +227,21 @@
                 </form>
             </div>
         </div>
+    @endif
 
-        <!-- MODAL CERRAR CAJA -->
+    @if (($caja && $caja->estado === 'abierta') || $pendiente)
+        <!-- MODAL CERRAR CAJA (la de hoy o una pendiente de otro día) -->
         <div x-show="openCloseModal" class="fixed inset-0 z-50 overflow-y-auto bg-black/50 flex items-center justify-center p-4" x-cloak>
             <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl relative" @click.away="openCloseModal = false">
-                <h3 class="text-lg font-bold text-gray-900 mb-1">Cerrar Caja</h3>
+                <h3 class="text-lg font-bold text-gray-900 mb-1">Cerrar caja del <span x-text="cierre.fecha"></span></h3>
                 <p class="text-sm text-gray-500 mb-5">
-                    Efectivo esperado: <span class="font-semibold text-gray-700">${{ number_format($efectivoEsperado, 2) }}</span>.
+                    Efectivo esperado: <span class="font-semibold text-gray-700">$<span x-text="cierre.esperado"></span></span>.
                     Cuenta el efectivo real y escríbelo abajo.
                 </p>
 
                 <form action="{{ route('cash-register.close') }}" method="POST">
                     @csrf
+                    <input type="hidden" name="caja_id" :value="cierre.id">
                     <div class="mb-4">
                         <label class="block text-xs font-medium text-gray-700 mb-1">Efectivo Contado (Real) ($) *</label>
                         <input type="number" step="0.01" min="0" name="monto_cierre_real" required

@@ -27,11 +27,18 @@ class CashRegisterController extends Controller
 
         $efectivoEsperado = $caja ? $caja->monto_apertura + $ventasEfectivoHoy : null;
 
+        // Caja de un día anterior que quedó abierta: hay que cerrarla
+        // (con su arqueo) antes de poder abrir la de hoy.
+        $pendiente = CashRegister::pendienteAnterior();
+        $cajasPendientes = CashRegister::where('estado', 'abierta')->whereDate('fecha', '<', $hoy)->count();
+
         return view('cash_register.index', compact(
             'caja',
             'ventasEfectivoHoy',
             'ventasTarjetaTransferenciaHoy',
-            'efectivoEsperado'
+            'efectivoEsperado',
+            'pendiente',
+            'cajasPendientes'
         ));
     }
 
@@ -45,6 +52,11 @@ class CashRegisterController extends Controller
         if (CashRegister::whereDate('fecha', $hoy)->exists()) {
             return redirect()->route('cash-register.index')
                              ->with('error', 'Ya existe una caja registrada para el día de hoy.');
+        }
+
+        if ($pendiente = CashRegister::pendienteAnterior()) {
+            return redirect()->route('cash-register.index')
+                             ->with('error', 'Primero debes cerrar la caja del ' . $pendiente->fecha->format('d/m/Y') . ', que quedó abierta.');
         }
 
         $validated = $request->validate([
@@ -112,13 +124,15 @@ class CashRegisterController extends Controller
     }
 
     /**
-     * Cerrar la caja del día: compara el efectivo contado contra el esperado
-     * (apertura + ventas en efectivo de esta caja) y guarda la diferencia.
-     * Después del cierre ya no se puede vender ni cancelar ventas de esta caja.
+     * Cerrar una caja (la de hoy o una de un día anterior que quedó
+     * abierta): compara el efectivo contado contra el esperado
+     * (apertura + ventas en efectivo de esa caja) y guarda la diferencia.
+     * Después del cierre ya no se puede vender ni cancelar ventas de esa caja.
      */
     public function close(Request $request)
     {
         $validated = $request->validate([
+            'caja_id' => 'required|integer',
             'monto_cierre_real' => 'required|numeric|min:0',
             'notas_cierre' => 'nullable|string',
         ]);
@@ -126,18 +140,25 @@ class CashRegisterController extends Controller
         // Se bloquea la fila de la caja para que ninguna venta se registre
         // o cancele mientras se calcula el cierre.
         $caja = DB::transaction(function () use ($validated) {
-            $caja = CashRegister::abiertaHoy(bloquear: true);
+            $caja = CashRegister::where('id', $validated['caja_id'])
+                                ->where('estado', 'abierta')
+                                ->lockForUpdate()
+                                ->first();
 
             if (!$caja) {
                 return null;
             }
 
-            $efectivoEsperado = $caja->monto_apertura + $caja->totalVentas(['efectivo']);
+            $efectivoEsperado = $caja->efectivoEsperado();
 
-            $notas = $caja->notas;
-            if (!empty($validated['notas_cierre'])) {
-                $notas = trim(($notas ? $notas . "\n" : '') . '[Cierre] ' . $validated['notas_cierre']);
+            $lineas = array_filter([$caja->notas]);
+            if (!$caja->esDeHoy()) {
+                $lineas[] = '[Cierre tardío el ' . now()->format('d/m/Y H:i') . ' por ' . (auth()->user()->name ?? 'usuario') . ']';
             }
+            if (!empty($validated['notas_cierre'])) {
+                $lineas[] = '[Cierre] ' . $validated['notas_cierre'];
+            }
+            $notas = $lineas ? trim(implode("\n", $lineas)) : null;
 
             $caja->update([
                 'monto_cierre_esperado' => $efectivoEsperado,
@@ -152,12 +173,12 @@ class CashRegisterController extends Controller
 
         if (!$caja) {
             return redirect()->route('cash-register.index')
-                             ->with('error', 'No hay una caja abierta para cerrar hoy.');
+                             ->with('error', 'Esa caja no existe o ya estaba cerrada.');
         }
 
         $diferencia = $caja->diferencia;
 
-        $mensaje = 'Caja cerrada. ';
+        $mensaje = 'Caja del ' . $caja->fecha->format('d/m/Y') . ' cerrada. ';
         if (abs($diferencia) < 0.01) {
             $mensaje .= 'El efectivo cuadra exactamente.';
         } elseif ($diferencia > 0) {

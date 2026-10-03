@@ -151,7 +151,7 @@ class ServiceSaleController extends Controller
                 }
 
                 if (!$venta->sePuedeCancelar()) {
-                    throw new \Exception('No se puede cancelar la venta de servicios #' . $venta->id . ' porque su caja ya fue cerrada.');
+                    throw new \Exception('No se puede cancelar la venta de servicios #' . $venta->id . ' porque es de un día anterior o su caja ya fue cerrada.');
                 }
 
                 $venta->update(['estado' => 'cancelada']);
