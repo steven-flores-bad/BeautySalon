@@ -45,6 +45,20 @@ class AppointmentController extends Controller
             ], 422);
         }
 
+        // Verificar si el horario ya está ocupado (las citas canceladas no
+        // ocupan el horario: ese espacio vuelve a quedar libre).
+        $citaExistente = Cita::whereDate('fecha', $fecha->toDateString())
+                             ->where('hora', $hora)
+                             ->where('estado', '!=', 'cancelada')
+                             ->exists();
+
+        if ($citaExistente) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Lo sentimos, este horario ya está reservado. Por favor, selecciona otra hora o fecha.',
+            ], 422); // Código 422 para indicar conflicto de datos
+        }
+
         // Si el servicio coincide por nombre con uno del sistema, se liga.
         $servicio = Service::whereRaw('LOWER(nombre) = ?', [mb_strtolower(trim($validated['servicio']))])->first();
 

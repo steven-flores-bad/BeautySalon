@@ -19,7 +19,8 @@ if (!defined('ABSPATH')) {
 /* ================= CONFIGURACIÓN ================= */
 
 // Dirección del sistema JulySalon en internet + /api/v1/citas/recibir
-define('JULYSALON_API_URL', 'https://TU-DOMINIO-DEL-SISTEMA.com/api/v1/citas/recibir');
+define('JULYSALON_API_URL', 'https://apptest.julysalon.online/api/v1/citas/recibir');
+
 
 // La misma clave que WORDPRESS_API_TOKEN en el archivo .env del sistema
 define('JULYSALON_API_TOKEN', 'PEGA-AQUI-LA-CLAVE');
