@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    // Página de WordPress que envía las citas que reservan los clientes.
+    'wordpress' => [
+        'token' => env('WORDPRESS_API_TOKEN'),
+    ],
+
 ];

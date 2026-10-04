@@ -1,3 +1,4 @@
+@php($citasPendientes = \App\Models\Cita::where('estado', 'pendiente')->whereDate('fecha', '>=', today())->count())
 <nav class="bg-gray-50 border-b border-gray-200 sticky top-0 z-40 shadow-sm" x-data="{ mobileMenuOpen: false, profileDropdown: false, reportsDropdown: false, productsDropdown: false, servicesDropdown: false, salesDropdown: false, expensesDropdown: false }">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
@@ -16,6 +17,14 @@
                     <!-- INICIO CON VALIDACIÓN DINÁMICA -->
                     <a href="{{ route('inicio') }}" class="px-3 py-2 rounded-lg text-sm font-semibold transition {{ request()->routeIs('inicio') ? 'bg-white shadow-sm border border-gray-200 text-pink-600' : 'text-gray-700 hover:text-pink-600 hover:bg-pink-50' }}">
                         Inicio
+                    </a>
+
+                    <!-- CITAS (con contador de pendientes) -->
+                    <a href="{{ route('citas.index') }}" class="relative px-3 py-2 rounded-lg text-sm font-semibold transition {{ request()->routeIs('citas.*') ? 'bg-white shadow-sm border border-gray-200 text-pink-600' : 'text-gray-700 hover:text-pink-600 hover:bg-pink-50' }}">
+                        Citas
+                        @if($citasPendientes > 0)
+                            <span class="absolute -top-1 -right-1 min-w-[1.25rem] h-5 px-1 rounded-full bg-pink-600 text-white text-[11px] font-bold flex items-center justify-center" title="Citas pendientes de confirmar">{{ $citasPendientes }}</span>
+                        @endif
                     </a>
 
                     <!-- CAJA CON VALIDACIÓN DINÁMICA -->
@@ -187,6 +196,12 @@
     <!-- Menú Desplegable para Móviles -->
     <div x-show="mobileMenuOpen" x-cloak class="md:hidden border-t border-gray-200 bg-white px-4 pt-2 pb-4 space-y-1">
         <a href="{{ route('inicio') }}" class="block px-3 py-2 rounded-lg text-base font-semibold {{ request()->routeIs('inicio') ? 'bg-gray-100 border border-gray-200 text-pink-600' : 'text-gray-700 hover:bg-pink-50 hover:text-pink-600' }}">Inicio</a>
+        <a href="{{ route('citas.index') }}" class="flex items-center justify-between px-3 py-2 rounded-lg text-base font-semibold {{ request()->routeIs('citas.*') ? 'bg-gray-100 border border-gray-200 text-pink-600' : 'text-gray-700 hover:bg-pink-50 hover:text-pink-600' }}">
+            Citas
+            @if($citasPendientes > 0)
+                <span class="min-w-[1.5rem] h-6 px-1.5 rounded-full bg-pink-600 text-white text-xs font-bold flex items-center justify-center">{{ $citasPendientes }}</span>
+            @endif
+        </a>
         <a href="{{ route('cash-register.index') }}" class="block px-3 py-2 rounded-lg text-base font-semibold {{ request()->routeIs('cash-register.*') ? 'bg-gray-100 border border-gray-200 text-pink-600' : 'text-gray-700 hover:bg-pink-50 hover:text-pink-600' }}">Caja</a>
         <!-- PRODUCTOS MÓVIL -->
         <div class="pt-1">

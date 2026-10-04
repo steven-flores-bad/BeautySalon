@@ -10,6 +10,7 @@ use App\Http\Controllers\ServiceCategoryController;
 use App\Http\Controllers\ServiceController;
 use App\Http\Controllers\ServiceSaleController;
 use App\Http\Controllers\CashRegisterController;
+use App\Http\Controllers\CitaController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -58,6 +59,10 @@ Route::middleware(['auth', 'activo'])->group(function () {
     Route::post('/caja/abrir', [CashRegisterController::class, 'open'])->name('cash-register.open');
     Route::put('/caja/apertura', [CashRegisterController::class, 'update'])->name('cash-register.update');
     Route::post('/caja/cerrar', [CashRegisterController::class, 'close'])->name('cash-register.close');
+
+    // Citas reservadas por los clientes desde la página web
+    Route::get('/citas', [CitaController::class, 'index'])->name('citas.index');
+    Route::patch('/citas/{cita}/estado', [CitaController::class, 'updateEstado'])->name('citas.estado');
 
     // Gastos
     Route::get('/expenses/historial', [ExpenseController::class, 'history'])->name('expenses.history');

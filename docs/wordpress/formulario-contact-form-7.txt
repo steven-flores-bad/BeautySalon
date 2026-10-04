@@ -1,0 +1,36 @@
+FORMULARIO DE CITAS PARA CONTACT FORM 7
+=======================================
+
+En WordPress: Contacto → Formularios de contacto → (tu formulario) → pestaña "Formulario".
+Los NOMBRES de los campos (nombre, telefono, email, servicio, fecha, hora, notas)
+deben quedar exactamente así para que el plugin los envíe al sistema.
+
+En "servicio", escribe los servicios con el MISMO nombre que tienen en el sistema
+(así la cita queda ligada al servicio y muestra su precio).
+
+----- Copia desde aquí -----
+
+<label> Nombre completo
+    [text* nombre autocomplete:name] </label>
+
+<label> Teléfono
+    [tel* telefono] </label>
+
+<label> Correo (opcional)
+    [email email] </label>
+
+<label> Servicio
+    [select* servicio first_as_label "Elige un servicio" "Corte Dama y Brushing Estilizado" "Alisado de Keratina Brasileña" "Pedicura Spa Exfoliante y Masaje"] </label>
+
+<label> Fecha
+    [date* fecha min:today] </label>
+
+<label> Hora
+    [select* hora first_as_label "Elige una hora" "9:00 AM" "10:00 AM" "11:00 AM" "12:00 PM" "1:00 PM" "2:00 PM" "3:00 PM" "4:00 PM" "5:00 PM"] </label>
+
+<label> Comentarios (opcional)
+    [textarea notas] </label>
+
+[submit "Reservar cita"]
+
+----- Hasta aquí -----
