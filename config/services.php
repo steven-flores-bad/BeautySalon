@@ -44,7 +44,7 @@ return [
     // donde llegan los avisos de nuevas reservas (si no se indica, se usa
     // el mismo correo que envía: MAIL_FROM_ADDRESS).
     'negocio' => [
-        'nombre' => env('NEGOCIO_NOMBRE', 'July Salon'),
+        'nombre' => env('NEGOCIO_NOMBRE', 'Julia Salón & Spa'),
         'email' => env('NEGOCIO_EMAIL', env('MAIL_FROM_ADDRESS')),
         // Número de contacto que aparece al pie de los correos al cliente.
         'telefono' => env('NEGOCIO_TELEFONO', '7474-8761'),

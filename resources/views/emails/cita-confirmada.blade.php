@@ -12,9 +12,8 @@
             <td align="center">
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px; background:#ffffff; border-radius:16px; overflow:hidden; border:1px solid #fbcfe8;">
                     <tr>
-                        <td style="background:#db2777; padding:22px 28px; color:#ffffff;">
+                        <td style="background:#111111; padding:22px 28px; color:#ffffff;">
                             <p style="margin:0; font-size:22px; font-weight:bold;">{{ $negocio }}</p>
-                            <p style="margin:4px 0 0; font-size:14px; opacity:0.9;">Salón de belleza</p>
                         </td>
                     </tr>
                     <tr>
