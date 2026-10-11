@@ -23,7 +23,7 @@ define('JULYSALON_API_URL', 'https://apptest.julysalon.online/api/v1/citas/recib
 
 
 // La misma clave que WORDPRESS_API_TOKEN en el archivo .env del sistema
-define('JULYSALON_API_TOKEN', 'PEGA-AQUI-LA-CLAVE');
+define('JULYSALON_API_TOKEN', 'c472708efed76d3d55d7350004009f7e7e702ab9cc656407');
 
 // ID del formulario de citas en Contact Form 7 (aparece en el shortcode,
 // ej. [contact-form-7 id="123"]). Déjalo en 0 para enviar TODOS los formularios.
