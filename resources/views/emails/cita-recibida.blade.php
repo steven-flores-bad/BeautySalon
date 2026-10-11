@@ -54,11 +54,7 @@
                             </p>
                         </td>
                     </tr>
-                    <tr>
-                        <td style="padding:16px 28px; background:#f9fafb; border-top:1px solid #f3f4f6; font-size:12px; color:#9ca3af; text-align:center;">
-                            Este correo se envió automáticamente porque reservaste una cita en nuestra página.
-                        </td>
-                    </tr>
+                    @include('emails.partials.pie')
                 </table>
             </td>
         </tr>
