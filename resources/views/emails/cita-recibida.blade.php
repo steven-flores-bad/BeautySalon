@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Recibimos tu reserva</title>
+    <title>Recibimos tu solicitud de cita</title>
 </head>
 {{-- Los correos usan estilos en línea: muchos programas de correo ignoran <style>. --}}
 <body style="margin:0; padding:0; background:#fdf2f8; font-family: Helvetica, Arial, sans-serif; color:#333;">
@@ -20,9 +20,19 @@
                     <tr>
                         <td style="padding:28px;">
                             <p style="margin:0 0 12px; font-size:18px; font-weight:bold; color:#111;">¡Hola, {{ $cita->cliente_nombre }}!</p>
-                            <p style="margin:0 0 20px; font-size:15px; line-height:1.5; color:#444;">
-                                Recibimos tu reserva. Estos son los datos de tu cita:
+                            <p style="margin:0 0 16px; font-size:15px; line-height:1.5; color:#444;">
+                                Recibimos tu solicitud de cita. Estos son los datos que nos enviaste:
                             </p>
+
+                            <!-- Aviso: todavía no está confirmada -->
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#fffbeb; border-radius:10px; border:1px solid #fcd34d; margin-bottom:16px;">
+                                <tr>
+                                    <td style="padding:12px 16px; font-size:14px; line-height:1.5; color:#92400e;">
+                                        ⏳ <strong>Tu cita está pendiente de confirmación.</strong><br>
+                                        Revisaremos la disponibilidad y te enviaremos otro correo cuando quede confirmada.
+                                    </td>
+                                </tr>
+                            </table>
 
                             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#fdf2f8; border-radius:12px; border:1px solid #fbcfe8;">
                                 <tr>
@@ -40,7 +50,7 @@
                             </table>
 
                             <p style="margin:20px 0 0; font-size:15px; line-height:1.5; color:#444;">
-                                Te esperamos. Si necesitas cambiar o cancelar tu cita, contáctanos y con gusto te ayudamos.
+                                Si necesitas cambiar algún dato, responde este correo o contáctanos y con gusto te ayudamos.
                             </p>
                         </td>
                     </tr>

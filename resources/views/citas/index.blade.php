@@ -110,7 +110,8 @@
                                 ] as $nuevo => [$texto, $clases, $desde])
                                     @if (in_array($cita->estado, $desde))
                                         <form action="{{ route('citas.estado', $cita) }}" method="POST" class="inline-block"
-                                              @if($nuevo === 'cancelada') @submit.prevent="$dispatch('confirm-action', { form: $el, type: 'cancel', title: 'Cancelar cita', question: '¿Cancelar la cita de', name: @js($cita->cliente_nombre), message: 'Podrás reabrirla si fue un error.', confirmText: 'Sí, cancelar cita' })" @endif>
+                                              @if($nuevo === 'cancelada') @submit.prevent="$dispatch('confirm-action', { form: $el, type: 'cancel', title: 'Cancelar cita', question: '¿Cancelar la cita de', name: @js($cita->cliente_nombre), message: 'Podrás reabrirla si fue un error.', confirmText: 'Sí, cancelar cita' })"
+                                              @elseif($nuevo === 'confirmada') @submit.prevent="$dispatch('confirm-action', { form: $el, type: 'cancel', title: 'Confirmar cita', question: '¿Confirmar la cita de', name: @js($cita->cliente_nombre), message: @js($cita->email ? 'Se le enviará un correo a ' . $cita->email . ' avisando que su cita está confirmada.' : 'Este cliente no dejó correo: recuerda avisarle por teléfono.'), confirmText: 'Sí, confirmar' })" @endif>
                                             @csrf
                                             @method('PATCH')
                                             <input type="hidden" name="estado" value="{{ $nuevo }}">

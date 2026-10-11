@@ -31,7 +31,7 @@ class CitaRecibida extends Mailable
             from: new Address(config('mail.from.address'), $negocio),
             // Si el cliente responde, le llega al correo del negocio.
             replyTo: [new Address(config('services.negocio.email'), $negocio)],
-            subject: 'Recibimos tu reserva en ' . $negocio,
+            subject: 'Recibimos tu solicitud de cita - ' . $negocio . ' (pendiente de confirmar)',
         );
     }
 

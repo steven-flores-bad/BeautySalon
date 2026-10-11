@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\CitaConfirmada;
 use App\Models\Cita;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
 
 class CitaController extends Controller
@@ -51,8 +54,35 @@ class CitaController extends Controller
             'estado' => ['required', Rule::in(array_keys(Cita::ESTADOS))],
         ]);
 
+        $estadoAnterior = $cita->estado;
         $cita->update(['estado' => $validated['estado']]);
 
-        return redirect()->back()->with('success', 'Cita de ' . $cita->cliente_nombre . ' marcada como ' . mb_strtolower($cita->nombreEstado()) . '.');
+        $mensaje = 'Cita de ' . $cita->cliente_nombre . ' marcada como ' . mb_strtolower($cita->nombreEstado()) . '.';
+
+        // Al confirmar, se le avisa al cliente por correo.
+        if ($cita->estado === 'confirmada' && $estadoAnterior !== 'confirmada') {
+            $mensaje .= ' ' . $this->avisarConfirmacion($cita);
+        }
+
+        return redirect()->back()->with('success', $mensaje);
+    }
+
+    /**
+     * Envía al cliente el correo "Tu cita está confirmada". Si falla, la
+     * cita queda confirmada igual y el error se anota en el registro.
+     */
+    private function avisarConfirmacion(Cita $cita): string
+    {
+        if (!$cita->email) {
+            return 'El cliente no dejó correo: avísale por teléfono (' . $cita->telefono . ').';
+        }
+
+        try {
+            Mail::to($cita->email, $cita->cliente_nombre)->send(new CitaConfirmada($cita));
+            return 'Se le envió un correo de confirmación a ' . $cita->email . '.';
+        } catch (\Throwable $e) {
+            Log::warning('No se pudo enviar la confirmación de la cita #' . $cita->id . ' a ' . $cita->email . ': ' . $e->getMessage());
+            return 'No se pudo enviar el correo de confirmación; avísale por teléfono (' . $cita->telefono . ').';
+        }
     }
 }
