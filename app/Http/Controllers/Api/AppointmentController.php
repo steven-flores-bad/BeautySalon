@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Mail\CitaRecibida;
+use App\Mail\NuevaReserva;
 use App\Models\Cita;
 use App\Models\Service;
 use Illuminate\Http\Request;
@@ -79,6 +80,7 @@ class AppointmentController extends Controller
         ]);
 
         $correoEnviado = $this->enviarConfirmacion($cita);
+        $avisoNegocio = $this->avisarAlNegocio($cita);
 
         return response()->json([
             'success' => true,
@@ -89,8 +91,30 @@ class AppointmentController extends Controller
                 'hora' => $cita->horaTexto(),
                 'estado' => $cita->estado,
                 'correo_enviado' => $correoEnviado,
+                'aviso_negocio' => $avisoNegocio,
             ],
         ], 201);
+    }
+
+    /**
+     * Envía al correo del negocio (NEGOCIO_EMAIL) un aviso con los datos de
+     * quien reservó. Si falla, la cita queda registrada igual.
+     */
+    private function avisarAlNegocio(Cita $cita): bool
+    {
+        $correoNegocio = config('services.negocio.email');
+
+        if (!$correoNegocio) {
+            return false;
+        }
+
+        try {
+            Mail::to($correoNegocio)->send(new NuevaReserva($cita->load('service')));
+            return true;
+        } catch (\Throwable $e) {
+            Log::warning('No se pudo enviar el aviso de la cita #' . $cita->id . ' al negocio (' . $correoNegocio . '): ' . $e->getMessage());
+            return false;
+        }
     }
 
     /**

@@ -40,4 +40,12 @@ return [
         'token' => env('WORDPRESS_API_TOKEN'),
     ],
 
+    // Datos del negocio para los correos: nombre que ve el cliente y correo
+    // donde llegan los avisos de nuevas reservas (si no se indica, se usa
+    // el mismo correo que envía: MAIL_FROM_ADDRESS).
+    'negocio' => [
+        'nombre' => env('NEGOCIO_NOMBRE', 'July Salon'),
+        'email' => env('NEGOCIO_EMAIL', env('MAIL_FROM_ADDRESS')),
+    ],
+
 ];
