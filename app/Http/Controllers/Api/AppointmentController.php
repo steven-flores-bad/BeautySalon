@@ -3,10 +3,13 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Mail\CitaRecibida;
 use App\Models\Cita;
 use App\Models\Service;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 
 /**
  * Recibe las citas que los clientes reservan en la página de WordPress.
@@ -75,6 +78,8 @@ class AppointmentController extends Controller
             'origen'         => 'wordpress',
         ]);
 
+        $correoEnviado = $this->enviarConfirmacion($cita);
+
         return response()->json([
             'success' => true,
             'message' => 'Cita registrada correctamente.',
@@ -83,8 +88,29 @@ class AppointmentController extends Controller
                 'fecha' => $cita->fecha->format('d/m/Y'),
                 'hora' => $cita->horaTexto(),
                 'estado' => $cita->estado,
+                'correo_enviado' => $correoEnviado,
             ],
         ], 201);
+    }
+
+    /**
+     * Envía al cliente el correo "Recibimos tu reserva" (si dejó su correo).
+     * Si el envío falla (por ejemplo, datos de Gmail incorrectos en el .env),
+     * la cita queda registrada igual y el error se anota en el registro.
+     */
+    private function enviarConfirmacion(Cita $cita): bool
+    {
+        if (!$cita->email) {
+            return false;
+        }
+
+        try {
+            Mail::to($cita->email, $cita->cliente_nombre)->send(new CitaRecibida($cita));
+            return true;
+        } catch (\Throwable $e) {
+            Log::warning('No se pudo enviar el correo de la cita #' . $cita->id . ' a ' . $cita->email . ': ' . $e->getMessage());
+            return false;
+        }
     }
 
     private function leerFecha(string $valor): ?Carbon
