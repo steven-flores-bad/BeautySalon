@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Historial de Servicios - JulySalon')
+@section('title', 'Historial de Servicios')
 
 @section('body-data')
 { openViewModal: false, selectedSale: {}, viewSale(venta) { this.selectedSale = venta; this.openViewModal = true; } }

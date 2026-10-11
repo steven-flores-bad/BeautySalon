@@ -29,7 +29,7 @@
 </head>
 <body>
 
-    <h1>JulySalon — Reporte de Gastos</h1>
+    <h1>{{ config('services.negocio.nombre') }} — Reporte de Gastos</h1>
     <p class="subtitle">
         @if ($periodo === 'dia')
             {{ $inicio->translatedFormat('l, d \d\e F \d\e Y') }}
@@ -205,7 +205,7 @@
         </table>
     @endif
 
-    <p class="footer">JulySalon — Reporte generado automáticamente por el sistema.</p>
+    <p class="footer">{{ config('services.negocio.nombre') }} — Reporte generado automáticamente por el sistema.</p>
 
 </body>
 </html>

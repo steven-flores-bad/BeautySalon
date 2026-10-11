@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Categorías - JulySalon')
+@section('title', 'Categorías')
 @section('max-width', 'max-w-5xl')
 
 @section('body-data')

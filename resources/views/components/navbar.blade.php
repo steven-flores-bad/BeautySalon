@@ -8,7 +8,7 @@
                 <!-- Logo / Nombre del Negocio -->
                 <div class="flex-shrink-0 flex items-center">
                     <span class="text-xl font-extrabold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
-                        ✨ JulySalon
+                        ✨ {{ config('services.negocio.nombre') }}
                     </span>
                 </div>
 

@@ -26,7 +26,7 @@
 </head>
 <body>
 
-    <h1>JulySalon — Reporte de Empleados</h1>
+    <h1>{{ config('services.negocio.nombre') }} — Reporte de Empleados</h1>
     <p class="subtitle">
         Comisiones por servicios atendidos —
         @if ($periodo === 'dia')
@@ -90,7 +90,7 @@
         </div>
     @endif
 
-    <p class="footer">JulySalon — Reporte generado automáticamente por el sistema.</p>
+    <p class="footer">{{ config('services.negocio.nombre') }} — Reporte generado automáticamente por el sistema.</p>
 
 </body>
 </html>

@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', ($historial ? 'Historial de Gastos' : 'Gastos') . ' - JulySalon')
+@section('title', $historial ? 'Historial de Gastos' : 'Gastos')
 
 @section('body-data')
 { openCreateModal: {{ $errors->any() && !old('_edit_id') ? 'true' : 'false' }}, openEditModal: {{ old('_edit_id') ? 'true' : 'false' }}, editForm: {{ Illuminate\Support\Js::from(old('_edit_id') ? ['id' => old('_edit_id'), 'fecha' => old('fecha'), 'categoria' => old('categoria'), 'descripcion' => old('descripcion'), 'monto' => old('monto'), 'metodo_pago' => old('metodo_pago'), 'notas' => old('notas')] : new stdClass) }} }

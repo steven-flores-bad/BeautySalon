@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Servicios - JulySalon')
+@section('title', 'Servicios')
 
 @section('body-data')
 { openCreateModal: false, openEditModal: false, openDeleteModal: false, editForm: {}, deleteForm: {} }

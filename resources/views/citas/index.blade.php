@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Citas - JulySalon')
+@section('title', 'Citas')
 
 @section('content')
     @if(session('error'))

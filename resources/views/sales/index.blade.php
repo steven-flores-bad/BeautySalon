@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Ventas / Caja - JulySalon')
+@section('title', 'Ventas / Caja')
 
 @section('body-data')
 saleForm()

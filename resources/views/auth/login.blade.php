@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Iniciar sesión - JulySalon</title>
+    <title>Iniciar sesión - {{ config('services.negocio.nombre') }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <style>
@@ -16,7 +16,7 @@
         <!-- Logo -->
         <div class="text-center mb-8">
             <h1 class="text-3xl font-extrabold bg-gradient-to-r from-pink-600 to-purple-600 bg-clip-text text-transparent">
-                ✨ JulySalon
+                ✨ {{ config('services.negocio.nombre') }}
             </h1>
             <p class="text-sm text-gray-500 mt-2">Inicia sesión para continuar</p>
         </div>
