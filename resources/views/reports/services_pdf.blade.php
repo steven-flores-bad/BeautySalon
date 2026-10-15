@@ -71,21 +71,6 @@
     <table class="resumen" style="margin-top:10px;">
         <tr>
             <td>
-                <span class="label">{{ $periodo === 'dia' ? 'Caja iniciada con' : 'Total de aperturas de caja' }}</span>
-                @if($cajasDelPeriodo->isEmpty())
-                    <span style="font-size:15px; color:#999;">No se abrió caja en este período.</span>
-                @else
-                    <span class="valor" style="font-size:21px;">${{ number_format($totalApertura, 2) }}</span>
-                    <span style="display:block; font-size:12px; color:#999; margin-top:2px;">
-                        @if($periodo === 'dia')
-                            Caja {{ $cajasDelPeriodo->first()->estado }}@if($cajasDelPeriodo->first()->estado === 'cerrada') — contado al cierre: ${{ number_format($cajasDelPeriodo->first()->monto_cierre_real, 2) }}@endif
-                        @else
-                            {{ $cajasDelPeriodo->count() }} {{ $cajasDelPeriodo->count() === 1 ? 'día con caja' : 'días con caja' }}
-                        @endif
-                    </span>
-                @endif
-            </td>
-            <td>
                 <span class="label">Subtotal</span>
                 <span class="valor" style="font-size:21px;">${{ number_format($totalSubtotal, 2) }}</span>
             </td>
@@ -101,6 +86,9 @@
             </td>
         </tr>
     </table>
+
+    {{-- Caja iniciada con + Total en caja (apertura + ventas en efectivo - gastos - comisiones) --}}
+    @include('reports.partials.caja-pdf')
 
     @if($porMetodoPago->isNotEmpty())
         <table class="metodos">
