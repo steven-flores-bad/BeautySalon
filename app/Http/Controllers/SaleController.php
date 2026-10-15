@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\CashRegister;
+use App\Models\Employee;
 use App\Models\Product;
 use App\Models\Sale;
 use Illuminate\Http\Request;
@@ -17,12 +18,11 @@ class SaleController extends Controller
     {
         $search = $request->input('search');
 
-        $sales = Sale::with(['user', 'details.product', 'cashRegister'])
+        $sales = Sale::with(['user', 'details.product', 'details.employee', 'cashRegister'])
                     ->withCount('details')
-                    ->when($search, function ($query, $search) {
-                        return $query->where('cliente_nombre', 'like', "%{$search}%")
-                                     ->orWhere('id', $search);
-                    })
+                    ->when($search, fn ($query) => $query->where(function ($q) use ($search) {
+                        $q->where('cliente_nombre', 'like', "%{$search}%")->orWhere('id', $search);
+                    }))
                     ->latest()
                     ->paginate(10)
                     ->withQueryString();
@@ -31,9 +31,12 @@ class SaleController extends Controller
         // para armar el formulario de nueva venta en el frontend.
         $products = Product::with('category')->orderBy('producto')->get();
 
+        // Empleadas activas: quién vendió cada producto (para su comisión).
+        $employees = Employee::where('activo', true)->orderBy('nombre')->get(['id', 'nombre']);
+
         $cajaAbierta = CashRegister::abiertaHoy();
 
-        return view('sales.index', compact('sales', 'search', 'products', 'cajaAbierta'));
+        return view('sales.index', compact('sales', 'search', 'products', 'employees', 'cajaAbierta'));
     }
 
     /**
@@ -49,6 +52,9 @@ class SaleController extends Controller
             'productos.*.product_id' => 'required|exists:products,id',
             'productos.*.cantidad' => 'required|integer|min:1',
             'productos.*.descuento' => 'nullable|numeric|min:0',
+            // Empleada que vendió el producto (opcional) y su % de comisión.
+            'productos.*.employee_id' => 'nullable|exists:employees,id',
+            'productos.*.comision_porcentaje' => 'nullable|numeric|min:0|max:100',
         ]);
 
         try {
@@ -85,12 +91,19 @@ class SaleController extends Controller
                     $subtotal += $bruto;
                     $totalDescuento += $descuentoLinea;
 
+                    // Comisión solo si se indicó qué empleada vendió el producto.
+                    $empleada = ($item['employee_id'] ?? null) ?: null;
+                    $porcentaje = $empleada ? (float) ($item['comision_porcentaje'] ?? 0) : 0;
+
                     $lineas[] = [
                         'product' => $product,
                         'cantidad' => $item['cantidad'],
                         'precio_unitario' => $precioUnitario,
                         'descuento' => $descuentoLinea,
                         'subtotal' => $lineaSubtotal,
+                        'employee_id' => $empleada,
+                        'comision_porcentaje' => $porcentaje,
+                        'comision_monto' => round($lineaSubtotal * $porcentaje / 100, 2),
                     ];
                 }
 
@@ -115,6 +128,9 @@ class SaleController extends Controller
                         'precio_unitario' => $linea['precio_unitario'],
                         'descuento' => $linea['descuento'],
                         'subtotal' => $linea['subtotal'],
+                        'employee_id' => $linea['employee_id'],
+                        'comision_porcentaje' => $linea['comision_porcentaje'],
+                        'comision_monto' => $linea['comision_monto'],
                     ]);
 
                     $linea['product']->decrement('existencia', $linea['cantidad']);

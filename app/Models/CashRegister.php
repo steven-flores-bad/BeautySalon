@@ -105,15 +105,13 @@ class CashRegister extends Model
     }
 
     /**
-     * Comisiones de las empleadas por los servicios vendidos en esta caja
+     * Comisiones de las empleadas por los servicios y productos vendidos en esta caja
      * (ventas completadas). Se pagan en efectivo desde la caja.
      */
     public function totalComisiones(): float
     {
-        return (float) ServiceSaleDetail::join('service_sales', 'service_sales.id', '=', 'service_sale_details.service_sale_id')
-                                        ->where('service_sales.cash_register_id', $this->id)
-                                        ->where('service_sales.estado', 'completada')
-                                        ->sum('service_sale_details.comision_monto');
+        // Servicios + productos vendidos en esta caja.
+        return \App\Support\Comisiones::deCaja($this->id);
     }
 
     /**

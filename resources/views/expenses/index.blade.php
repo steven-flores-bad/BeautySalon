@@ -116,7 +116,7 @@
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
             <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-1">Comisiones de empleadas</p>
             <p class="text-2xl font-bold text-red-600">${{ number_format($totalComisiones, 2) }}</p>
-            <p class="text-xs text-gray-400 mt-1">Por los servicios vendidos — {{ $textoPeriodo }}</p>
+            <p class="text-xs text-gray-400 mt-1">Por servicios y productos vendidos — {{ $textoPeriodo }}</p>
         </div>
         <div class="bg-red-50 rounded-xl border border-red-200 shadow-sm p-5">
             <p class="text-xs text-red-400 uppercase tracking-wide font-semibold mb-1">Total de egresos</p>

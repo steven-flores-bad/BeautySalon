@@ -104,9 +104,10 @@
     <table class="detalle">
         <thead>
             <tr>
-                <th style="width:60%;">Empleada</th>
-                <th class="num" style="width:20%;">Servicios</th>
-                <th class="num" style="width:20%;">Comisión</th>
+                <th style="width:46%;">Empleada</th>
+                <th class="num" style="width:18%;">Servicios</th>
+                <th class="num" style="width:18%;">Productos</th>
+                <th class="num" style="width:18%;">Comisión</th>
             </tr>
         </thead>
         <tbody>
@@ -114,16 +115,17 @@
                 <tr>
                     <td>{{ $emp->nombre }}</td>
                     <td class="num">{{ $emp->servicios }}</td>
+                    <td class="num">{{ $emp->productos }}</td>
                     <td class="num">${{ number_format($emp->monto, 2) }}</td>
                 </tr>
             @empty
-                <tr><td colspan="3" style="text-align:center; color:#999; padding:16px;">No hay comisiones en este período.</td></tr>
+                <tr><td colspan="4" style="text-align:center; color:#999; padding:16px;">No hay comisiones en este período.</td></tr>
             @endforelse
         </tbody>
         @if($comisionesPorEmpleada->isNotEmpty())
             <tfoot>
                 <tr>
-                    <td colspan="2" class="num" style="font-weight:bold; border-top:2px solid #333;">Total de comisiones</td>
+                    <td colspan="3" class="num" style="font-weight:bold; border-top:2px solid #333;">Total de comisiones</td>
                     <td class="num" style="font-weight:bold; color:#dc2626; border-top:2px solid #333;">${{ number_format($totalComisiones, 2) }}</td>
                 </tr>
             </tfoot>

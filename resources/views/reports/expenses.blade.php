@@ -108,7 +108,7 @@
         </div>
         @forelse($comisionesPorEmpleada as $emp)
             <div class="flex justify-between items-center text-sm py-2 border-b border-gray-100 last:border-0">
-                <span class="text-gray-700">{{ $emp->nombre }} <span class="text-xs text-gray-400">({{ $emp->servicios }} {{ $emp->servicios === 1 ? 'servicio' : 'servicios' }})</span></span>
+                <span class="text-gray-700">{{ $emp->nombre }} <span class="text-xs text-gray-400">({{ $emp->servicios }} {{ $emp->servicios === 1 ? 'servicio' : 'servicios' }}@if($emp->productos), {{ $emp->productos }} {{ $emp->productos === 1 ? 'producto' : 'productos' }}@endif)</span></span>
                 <span class="font-semibold text-gray-800">${{ number_format($emp->monto, 2) }}</span>
             </div>
         @empty

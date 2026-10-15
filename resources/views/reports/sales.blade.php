@@ -49,7 +49,7 @@
     </p>
 
     <!-- Tarjetas de resumen -->
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+    <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-8">
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
             <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-1">Total del Período</p>
             <p class="text-3xl font-bold text-pink-600">${{ number_format($totalPeriodo, 2) }}</p>
@@ -61,6 +61,10 @@
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
             <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-1">Ticket Promedio</p>
             <p class="text-3xl font-bold text-gray-800">${{ number_format($ticketPromedio, 2) }}</p>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+            <p class="text-xs text-gray-400 uppercase tracking-wide font-semibold mb-1">Comisiones</p>
+            <p class="text-3xl font-bold text-indigo-600">${{ number_format($totalComisiones, 2) }}</p>
         </div>
     </div>
 
@@ -115,12 +119,14 @@
                         <th class="py-3 px-4 font-semibold text-right">Precio Unitario</th>
                         <th class="py-3 px-4 font-semibold text-right">Descuento</th>
                         <th class="py-3 px-4 font-semibold text-right">Subtotal</th>
+                        <th class="py-3 px-4 font-semibold">Vendió</th>
+                        <th class="py-3 px-4 font-semibold text-right">Comisión</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200 text-sm">
                     @forelse ($productosVendidos as $fechaVenta => $detallesDelDia)
                         <tr class="bg-gray-50">
-                            <td colspan="6" class="py-2 px-4 text-xs font-bold text-gray-500 uppercase tracking-wide">
+                            <td colspan="8" class="py-2 px-4 text-xs font-bold text-gray-500 uppercase tracking-wide">
                                 {{ \Carbon\Carbon::parse($fechaVenta)->translatedFormat('l, d \d\e F') }}
                             </td>
                         </tr>
@@ -153,11 +159,13 @@
                                     @endif
                                 </td>
                                 <td class="py-3 px-4 text-right text-pink-600 font-semibold">${{ number_format($detalle->subtotal, 2) }}</td>
+                                <td class="py-3 px-4 text-gray-600">{{ $detalle->employee->nombre ?? '—' }}</td>
+                                <td class="py-3 px-4 text-right text-indigo-600">@if($detalle->comision_monto > 0)${{ number_format($detalle->comision_monto, 2) }} <span class="text-xs text-gray-400">({{ number_format($detalle->comision_porcentaje, 0) }}%)</span>@else<span class="text-gray-300">—</span>@endif</td>
                             </tr>
                         @endforeach
                     @empty
                         <tr>
-                            <td colspan="6" class="text-center py-10 text-gray-400">No se registraron ventas en este período.</td>
+                            <td colspan="8" class="text-center py-10 text-gray-400">No se registraron ventas en este período.</td>
                         </tr>
                     @endforelse
                 </tbody>
@@ -166,6 +174,8 @@
                         <tr class="bg-gray-50 border-t-2 border-gray-200 font-bold text-sm">
                             <td colspan="5" class="py-3 px-4 text-right text-gray-700">Total del período:</td>
                             <td class="py-3 px-4 text-right text-pink-600">${{ number_format($totalPeriodo, 2) }}</td>
+                            <td></td>
+                            <td class="py-3 px-4 text-right text-indigo-600">${{ number_format($totalComisiones, 2) }}</td>
                         </tr>
                     </tfoot>
                 @endif

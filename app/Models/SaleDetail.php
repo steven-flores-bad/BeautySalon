@@ -18,6 +18,9 @@ class SaleDetail extends Model
         'precio_unitario',
         'descuento',
         'subtotal',
+        'employee_id',
+        'comision_porcentaje',
+        'comision_monto',
     ];
 
     /**
@@ -34,5 +37,13 @@ class SaleDetail extends Model
     public function product()
     {
         return $this->belongsTo(Product::class);
+    }
+
+    /**
+     * Empleada que vendió el producto (recibe la comisión).
+     */
+    public function employee()
+    {
+        return $this->belongsTo(Employee::class);
     }
 }

@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\CashRegister;
 use App\Models\Expense;
-use App\Models\ServiceSaleDetail;
+use App\Support\Comisiones;
 use App\Support\Periodo;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -78,10 +78,7 @@ class ExpenseController extends Controller
         // Total de egresos del período: todos los gastos (sin filtros) más
         // las comisiones de las empleadas por los servicios vendidos.
         $gastosSinFiltros = (float) Expense::whereBetween('fecha', [$inicio->toDateString(), $fin->toDateString()])->sum('monto');
-        $totalComisiones = (float) ServiceSaleDetail::join('service_sales', 'service_sales.id', '=', 'service_sale_details.service_sale_id')
-                                    ->where('service_sales.estado', 'completada')
-                                    ->whereBetween('service_sales.created_at', [$inicio, $fin])
-                                    ->sum('service_sale_details.comision_monto');
+        $totalComisiones = Comisiones::total($inicio, $fin);
         $totalEgresos = $gastosSinFiltros + $totalComisiones;
 
         $expenses = $query->orderByDesc('fecha')

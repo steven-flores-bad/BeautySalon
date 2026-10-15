@@ -8,6 +8,7 @@ use App\Models\Sale;
 use App\Models\SaleDetail;
 use App\Models\ServiceSale;
 use App\Models\ServiceSaleDetail;
+use App\Support\Comisiones;
 use App\Support\Periodo;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
@@ -135,20 +136,8 @@ class ReportController extends Controller
         $totalIngresos = $ingresosProductos + $ingresosServicios;
 
         // Comisiones de las empleadas por los servicios vendidos en el período.
-        $comisionesPorEmpleada = ServiceSaleDetail::join('service_sales', 'service_sales.id', '=', 'service_sale_details.service_sale_id')
-                                    ->where('service_sales.estado', 'completada')
-                                    ->whereBetween('service_sales.created_at', [$inicio, $fin])
-                                    ->where('service_sale_details.comision_monto', '>', 0)
-                                    ->with('employee')
-                                    ->get(['service_sale_details.*'])
-                                    ->groupBy('employee_id')
-                                    ->map(fn ($grupo) => (object) [
-                                        'nombre' => $grupo->first()->employee->nombre ?? 'Empleado eliminado',
-                                        'servicios' => $grupo->sum('cantidad'),
-                                        'monto' => (float) $grupo->sum('comision_monto'),
-                                    ])
-                                    ->sortByDesc('monto')
-                                    ->values();
+        // Comisiones de las empleadas por servicios y por productos vendidos.
+        $comisionesPorEmpleada = Comisiones::porEmpleada($inicio, $fin);
         $totalComisiones = (float) $comisionesPorEmpleada->sum('monto');
 
         // Cajas abiertas en el período: con cuánto se inició cada una.
@@ -279,8 +268,13 @@ class ReportController extends Controller
                             ->join('sales', 'sales.id', '=', 'sale_details.sale_id')
                             ->where('sales.estado', 'completada')
                             ->whereBetween('sales.created_at', [$inicio, $fin])
-                            ->with('product')
-                            ->get()
+                            ->with(['product', 'employee'])
+                            ->get();
+
+        // Comisiones de las empleadas por los productos vendidos.
+        $totalComisiones = (float) $productosVendidos->sum('comision_monto');
+
+        $productosVendidos = $productosVendidos
                             ->groupBy('fecha_venta')
                             ->map(function ($grupo) {
                                 return $grupo->sortByDesc('subtotal')->values();
@@ -309,6 +303,7 @@ class ReportController extends Controller
             'totalVentas' => $totalVentas,
             'ticketPromedio' => $ticketPromedio,
             'productosVendidos' => $productosVendidos,
+            'totalComisiones' => $totalComisiones,
             'porMetodoPago' => $porMetodoPago,
         ];
     }

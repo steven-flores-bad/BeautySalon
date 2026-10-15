@@ -59,6 +59,10 @@
                 <span class="label">Ticket Promedio</span>
                 <span class="valor">${{ number_format($ticketPromedio, 2) }}</span>
             </td>
+            <td>
+                <span class="label">Comisiones</span>
+                <span class="valor" style="color:#4f46e5;">${{ number_format($totalComisiones, 2) }}</span>
+            </td>
         </tr>
     </table>
 
@@ -104,12 +108,14 @@
                 <th class="num">Precio Unitario</th>
                 <th class="num">Descuento</th>
                 <th class="num">Subtotal</th>
+                <th>Vendió</th>
+                <th class="num">Comisión</th>
             </tr>
         </thead>
         <tbody>
             @forelse ($productosVendidos as $fechaVenta => $detallesDelDia)
                 <tr style="background:#f3f4f6;">
-                    <td colspan="6" style="font-weight:bold; text-transform:uppercase; font-size:11px; color:#666;">
+                    <td colspan="8" style="font-weight:bold; text-transform:uppercase; font-size:11px; color:#666;">
                         {{ \Carbon\Carbon::parse($fechaVenta)->translatedFormat('l, d \d\e F') }}
                     </td>
                 </tr>
@@ -132,11 +138,13 @@
                             @endif
                         </td>
                         <td class="num">${{ number_format($detalle->subtotal, 2) }}</td>
+                        <td>{{ $detalle->employee->nombre ?? '—' }}</td>
+                        <td class="num" style="color:#4f46e5;">@if($detalle->comision_monto > 0)${{ number_format($detalle->comision_monto, 2) }}@else—@endif</td>
                     </tr>
                 @endforeach
             @empty
                 <tr>
-                    <td colspan="6" style="text-align:center; color:#999; padding: 20px;">No se registraron ventas en este período.</td>
+                    <td colspan="8" style="text-align:center; color:#999; padding: 20px;">No se registraron ventas en este período.</td>
                 </tr>
             @endforelse
         </tbody>
@@ -147,6 +155,12 @@
         <table class="totales">
             <tr>
                 <td class="titulo">Total del período</td>
+                @if($totalComisiones > 0)
+                    <td>
+                        <span class="t-label">Comisiones</span>
+                        <span class="t-valor" style="color:#4f46e5;">${{ number_format($totalComisiones, 2) }}</span>
+                    </td>
+                @endif
                 <td>
                     <span class="t-valor" style="color:#db2777;">${{ number_format($totalPeriodo, 2) }}</span>
                 </td>

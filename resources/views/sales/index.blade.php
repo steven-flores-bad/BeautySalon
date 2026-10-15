@@ -80,7 +80,7 @@ saleForm()
                                 </span>
                             </td>
                             <td class="py-3 px-4 text-right space-x-2">
-                                <button @click="viewSale({{ Illuminate\Support\Js::from($sale->load('details.product')) }})"
+                                <button @click="viewSale({{ Illuminate\Support\Js::from($sale->load(['details.product', 'details.employee'])) }})"
                                         class="text-indigo-600 hover:text-indigo-900 font-medium text-xs bg-indigo-50 px-2.5 py-1 rounded-md transition">
                                     Ver
                                 </button>
@@ -114,7 +114,7 @@ saleForm()
 @section('modals')
     <!-- MODAL NUEVA VENTA -->
     <div x-show="openCreateModal" class="fixed inset-0 z-50 overflow-y-auto bg-black/50 flex items-center justify-center p-4" x-cloak>
-        <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-xl relative" @click.away="openCreateModal = false">
+        <div class="bg-white rounded-2xl max-w-3xl w-full p-6 shadow-xl relative" @click.away="openCreateModal = false">
             <h3 class="text-lg font-bold text-gray-900 mb-4">Nueva Venta</h3>
 
             <form :action="'{{ route('sales.store') }}'" method="POST">
@@ -143,6 +143,8 @@ saleForm()
                                 <th class="text-left py-2 px-3 rounded-tl-lg">Producto</th>
                                 <th class="text-center py-2 px-3 w-20">Cant.</th>
                                 <th class="text-center py-2 px-3 w-24">Desc. ($)</th>
+                                <th class="text-left py-2 px-3 w-36">Vendió</th>
+                                <th class="text-center py-2 px-3 w-20">Com. (%)</th>
                                 <th class="text-right py-2 px-3 w-24">Subtotal</th>
                                 <th class="w-10 rounded-tr-lg"></th>
                             </tr>
@@ -184,6 +186,17 @@ saleForm()
                                     <td class="py-2 px-3">
                                         <input type="number" step="0.01" min="0" :name="`productos[${index}][descuento]`" x-model.number="item.descuento" placeholder="0.00" class="w-full border border-gray-300 rounded-lg p-1.5 text-sm text-center">
                                     </td>
+                                    <td class="py-2 px-3">
+                                        <select :name="`productos[${index}][employee_id]`" x-model="item.employee_id" class="w-full border border-gray-300 rounded-lg p-1.5 text-sm">
+                                            <option value="">— Nadie —</option>
+                                            <template x-for="e in employees" :key="e.id">
+                                                <option :value="e.id" x-text="e.nombre"></option>
+                                            </template>
+                                        </select>
+                                    </td>
+                                    <td class="py-2 px-3">
+                                        <input type="number" step="0.01" min="0" max="100" :name="`productos[${index}][comision_porcentaje]`" x-model.number="item.comision_porcentaje" :disabled="!item.employee_id" placeholder="0" class="w-full border border-gray-300 rounded-lg p-1.5 text-sm text-center disabled:bg-gray-100 disabled:text-gray-400">
+                                    </td>
                                     <td class="py-2 px-3 text-right text-gray-600" x-text="'$' + lineTotal(item).toFixed(2)"></td>
                                     <td class="py-2 px-3 text-center">
                                         <button type="button" @click="removeItem(index)" class="text-red-500 hover:text-red-700 text-xs" x-show="items.length > 1">✕</button>
@@ -200,7 +213,9 @@ saleForm()
                 <div class="flex justify-end mb-4">
                     <div class="text-right space-y-0.5">
                         <p class="text-xs text-gray-500">Subtotal: <span x-text="'$' + subtotal().toFixed(2)"></span></p>
-                        <p class="text-xs text-gray-500" x-show="totalDescuento() > 0">Descuento total: <span class="text-red-500" x-text="'-$' + totalDescuento().toFixed(2)"></span></p>                        <span class="text-lg font-bold text-pink-600">Total a cobrar: <span x-text="'$' + total().toFixed(2)"></span></span>
+                        <p class="text-xs text-gray-500" x-show="totalDescuento() > 0">Descuento total: <span class="text-red-500" x-text="'-$' + totalDescuento().toFixed(2)"></span></p>
+                        <p class="text-xs text-gray-500" x-show="totalComision() > 0">Comisiones de empleadas: <span class="text-indigo-500" x-text="'$' + totalComision().toFixed(2)"></span></p>
+                        <span class="text-lg font-bold text-pink-600">Total a cobrar: <span x-text="'$' + total().toFixed(2)"></span></span>
                     </div>
                 </div>
 
@@ -214,7 +229,7 @@ saleForm()
 
     <!-- MODAL VER DETALLE DE VENTA -->
     <div x-show="openViewModal" class="fixed inset-0 z-50 overflow-y-auto bg-black/50 flex items-center justify-center p-4" x-cloak>
-        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl relative" @click.away="openViewModal = false">
+        <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-xl relative" @click.away="openViewModal = false">
             <h3 class="text-lg font-bold text-gray-900 mb-1">Venta <span x-text="'#' + selectedSale.id"></span></h3>
             <p class="text-xs text-gray-400 mb-4" x-text="selectedSale.cliente_nombre || 'Cliente general'"></p>
 
@@ -226,6 +241,7 @@ saleForm()
                             <th class="text-center py-2 px-3">Cant.</th>
                             <th class="text-right py-2 px-3">Desc.</th>
                             <th class="text-right py-2 px-3">Subtotal</th>
+                            <th class="text-right py-2 px-3">Comisión</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -235,6 +251,7 @@ saleForm()
                                 <td class="py-2 px-3 text-center" x-text="detail.cantidad"></td>
                                 <td class="py-2 px-3 text-right" x-text="detail.descuento > 0 ? '-$' + parseFloat(detail.descuento).toFixed(2) : '—'"></td>
                                 <td class="py-2 px-3 text-right" x-text="'$' + parseFloat(detail.subtotal).toFixed(2)"></td>
+                                <td class="py-2 px-3 text-right text-indigo-600 text-xs" x-text="detail.employee ? (detail.employee.nombre + ': $' + parseFloat(detail.comision_monto).toFixed(2)) : '—'"></td>
                             </tr>
                         </template>
                     </tbody>
@@ -262,19 +279,20 @@ saleForm()
                 openViewModal: false,
                 selectedSale: {},
                 products: @json($products),
-                items: [{ product_id: '', cantidad: 1, descuento: 0, search: '', open: false }],
+                employees: @json($employees),
+                items: [{ product_id: '', cantidad: 1, descuento: 0, employee_id: '', comision_porcentaje: 0, search: '', open: false }],
                 cliente_nombre: '',
                 metodo_pago: 'efectivo',
 
                 openModal() {
-                    this.items = [{ product_id: '', cantidad: 1, descuento: 0, search: '', open: false }];
+                    this.items = [{ product_id: '', cantidad: 1, descuento: 0, employee_id: '', comision_porcentaje: 0, search: '', open: false }];
                     this.cliente_nombre = '';
                     this.metodo_pago = 'efectivo';
                     this.openCreateModal = true;
                 },
 
                 addItem() {
-                    this.items.push({ product_id: '', cantidad: 1, descuento: 0, search: '', open: false });
+                    this.items.push({ product_id: '', cantidad: 1, descuento: 0, employee_id: '', comision_porcentaje: 0, search: '', open: false });
                 },
 
                 removeItem(index) {
@@ -328,6 +346,14 @@ saleForm()
 
                 total() {
                     return this.items.reduce((sum, item) => sum + this.lineTotal(item), 0);
+                },
+
+                // Comisión de cada línea: solo si se eligió quién vendió el producto.
+                totalComision() {
+                    return this.items.reduce((sum, item) => {
+                        if (!item.employee_id) return sum;
+                        return sum + (this.lineTotal(item) * ((parseFloat(item.comision_porcentaje) || 0) / 100));
+                    }, 0);
                 },
 
                 viewSale(sale) {
